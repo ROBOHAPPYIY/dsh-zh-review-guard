@@ -551,7 +551,7 @@ dsh plugin --profile desktop install
 
 **从旧版本升级**：把一键安装命令里的 tag 换成新版本号再跑一次，然后重启 App。`AGENTS.md` 的认领先比 `agents-state.json` 里记录的哈希（本插件自己写过的内容），再比全文是否就是本插件的文本（只差版本号也算）—— 所以 v0.2.0 及更老版本写下的文件仍会被认领并就地升级，不会出现"文件里还是旧规则、插件却以为那是你手写的、于是停止同步"。注意 v0.2.1 起**取消了"只要带前缀标记就整文件覆盖"**的旧行为：只有确实属于本插件的文件才会被改写，且改前会备份。
 
-## 本机复验记录（发布时留下的事实）
+## 本机复验记录（v0.2.0 发布时留下的事实）
 
 用**从 Release 下载回来的那份 tgz**（不是本地原文件）复验过：
 
@@ -582,7 +582,7 @@ dsh plugin --profile desktop install
 
 > 一处未覆盖（诚实说明）：本机 profile 的 app 是 Web UI，`dsh ... headless` 不是它的参数，所以"从 Release 装的副本在一次完整 LLM 会话里被装配"没有单独跑通；该结论由上面的 boot 挂载证据 + 本机真实运行证据（`status.json` 的 `assemblies` 递增、`lastSectionNames` 含 `zh-review-guard`）共同支撑。
 
-### v0.2.1 复检（本机源码树 · 尚未发布到 Release）
+### v0.2.1 复检（2026-10-02 发布后）
 
 v0.2.1 是一次安全加固版，改动集中在 `lib/index.js` 与自测里：
 
@@ -595,4 +595,4 @@ v0.2.1 是一次安全加固版，改动集中在 `lib/index.js` 与自测里：
 
 - `node test/selftest.mjs` → `67/67 passed`，`exit=0`（v0.2.0 是 57 项）；
 - 另跑一个独立脚本，在**临时 `DSH_HOME`** 里重放四个场景：①含标记片段的用户文件逐字节保留、不产生备份；②只差版本号的旧全文被就地升级、生成备份与 `agents-state.json`；③插件自己写过的内容仍可继续更新（靠状态哈希）；④纯用户手写文件不动 → `VERIFY OK 9/9`；
-- 打包产物解包后自测同样 `67/67 passed`；大小与 SHA256 见 [RELEASE-NOTES-v0.2.1.md](./RELEASE-NOTES-v0.2.1.md)（该版本尚未发布到 GitHub Release，发布后会补上 Release 下载复验）。
+- 打包产物解包后自测同样 `67/67 passed`；发布后把 Release 附件（35 197 B）下载回来复验，SHA256 = `A6805A63C8CA3A7216C9E1E7BE8A72DB9F9116C7E728352B8764DFEBEC7F77DB`，与本地打包产物逐字节一致。
