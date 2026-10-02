@@ -7,6 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/ROBOHAPPYIY/dsh-zh-review-guard?color=blue&label=release)](https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/ROBOHAPPYIY/dsh-zh-review-guard/total?color=brightgreen)](https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](./package.json)
 [![Self test](https://img.shields.io/badge/self%20test-26%2F26-brightgreen)](./test/selftest.mjs)
 [![DSH plugin](https://img.shields.io/badge/DSH-bundle%20plugin-7B68EE)](./cordis.patch.yml)
@@ -69,7 +70,7 @@ dsh plugin --profile desktop add .\dsh-zh-review-guard-0.1.0.tgz
 dsh plugin --profile desktop remove dsh-zh-review-guard
 ```
 
-完整的下载/手工安装/验证/卸载步骤与踩坑记录见 **[INSTALL.md](./INSTALL.md)**。
+完整的**保姆级教程**（下载 → 核对哈希 → 选 profile → 安装 → 重启 → 验证 → 卸载 → 故障排查 A–G）见 **[INSTALL.md](./INSTALL.md)**。
 
 > 零第三方依赖（只用 `node:` 内置模块）、**没有编译步骤**、不联网、不写配置文件之外的位置：tgz 拷过去就能装。仓库里的 tgz 是 `npm pack` 产物，Release 附件与它逐字节一致。
 
@@ -152,9 +153,9 @@ dev_uninject_plugin  dsh-zh-review-guard
 
 ## 许可证
 
-本仓库目前**未附带开源许可证文件**（按默认规则保留所有权利）。如果要在团队内分发、二次改造，或需要 MIT / Apache-2.0 之类的正式授权，开个 issue 说明用途即可，我会按需补上 `LICENSE`。
+[MIT](./LICENSE) © 2026 ROBOHAPPYIY —— 可自由使用、修改、再分发（含商用、含二次封装），保留版权声明即可。
 
 ## 相关
 
-- 安装与排障：[`INSTALL.md`](./INSTALL.md)
+- 保姆级安装教程与排障：[`INSTALL.md`](./INSTALL.md)
 - 版本说明：[Releases](https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases)
