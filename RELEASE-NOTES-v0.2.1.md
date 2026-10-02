@@ -54,7 +54,7 @@ dsh plugin --profile desktop add "D:\AGENTCREATE\dist\dsh-zh-review-guard-0.2.1.
 
 | 坑 | 绕法 |
 | --- | --- |
-| `PATH` 里的 `gh` 登录失效：`The token in keyring is invalid` | 改用 dsh 自带那份：`C:\Users\ZNY\.dsh\bin\gh.exe`（同一账号、token 有效、scopes 含 `repo`） |
+| `PATH` 里的 `gh` 登录失效：`The token in keyring is invalid` | 改用 dsh 自带那份：`C:\Users\<你的用户名>\.dsh\bin\gh.exe`（同一账号、token 有效、scopes 含 `repo`） |
 | git 直连 `github.com:443` 不通：`Failed to connect to github.com:443 after 21114 ms` | 加 `-c http.proxy=http://127.0.0.1:7897` 走本地代理 |
 | 全局 `url.…ghfast.top….insteadOf https://github.com/` 把直连 URL 重写回镜像域名，而凭据是按 host 查找的 → 认证失败 | 让 `GIT_CONFIG_GLOBAL` 指向空配置去掉重写，再用 `-c credential.helper=` 重置 helper 链并接上 gh 的 `auth git-credential` |
 
@@ -85,7 +85,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
 ```powershell
 $px = 'http://127.0.0.1:7897'
-$ghHelper = "credential.helper=!'C:\Users\ZNY\.dsh\bin\gh.exe' auth git-credential"
+$ghHelper = "credential.helper=!'C:\Users\<你的用户名>\.dsh\bin\gh.exe' auth git-credential"
 $url = 'https://github.com/ROBOHAPPYIY/dsh-zh-review-guard.git'
 
 Copy-Item D:\AGENTCREATE\dist\dsh-zh-review-guard-0.2.1.tgz D:\AGENTCREATE\release\ -Force
@@ -104,7 +104,7 @@ git -c http.proxy=$px -c credential.helper= -c $ghHelper push $url refs/tags/v0.
 
 # 建 Release（用 dsh 自带那份 gh）
 $env:HTTPS_PROXY = $px
-& 'C:\Users\ZNY\.dsh\bin\gh.exe' release create v0.2.1 D:\AGENTCREATE\release\dsh-zh-review-guard-0.2.1.tgz `
+& 'C:\Users\<你的用户名>\.dsh\bin\gh.exe' release create v0.2.1 D:\AGENTCREATE\release\dsh-zh-review-guard-0.2.1.tgz `
     --repo ROBOHAPPYIY/dsh-zh-review-guard --title 'v0.2.1 - dsh-zh-review-guard' `
     --notes-file D:\AGENTCREATE\dsh-zh-review-guard\RELEASE-NOTES-v0.2.1.md
 ```
