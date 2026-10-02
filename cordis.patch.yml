@@ -1,0 +1,6 @@
+# dsh-zh-review-guard bundle 层：把护栏插件插入 profile 的层栈。
+# 装配后，每个会话每次装配系统提示词都会调用本插件的 system-prompt/assemble 瀑布。
+- insert:
+    - id: dsh-zh-review-guard
+      name: 'dsh-zh-review-guard'
+      config: {}

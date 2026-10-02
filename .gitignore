@@ -1,0 +1,7 @@
+# 发布产物不进仓库：tgz 作为 GitHub Release 附件分发
+*.tgz
+
+# 依赖与临时文件
+node_modules/
+*.log
+*.tmp
