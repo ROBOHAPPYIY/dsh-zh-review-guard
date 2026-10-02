@@ -95,7 +95,7 @@ Done in 11.4s using pnpm v11.7.0
 
 看到 `Done in ... using pnpm` 就是装好了（`dsh plugin add` 会自动把包名写进 `dsh.profile.bundles`，**不需要手工改任何文件**）。接着跳到 **[第 7 步：确认装上了](#第-7-步确认装上了)**，再按[第 8 步](#第-8-步重启-dsh-app)重启 App 即可。
 
-> **为什么写 `#v0.1.1`**：`github:用户/仓库#tag` 里 `#` 后面是 tag；pin 住 tag 才能保证每次装到的都是同一份代码。不写 tag 会装 `main` 分支的最新提交。以后升级就是把这一行里的版本号换成新版号再跑一次。
+> **为什么写 `#v0.2.0`**：`github:用户/仓库#tag` 里 `#` 后面是 tag；pin 住 tag 才能保证每次装到的都是同一份代码。不写 tag 会装 `main` 分支的最新提交。以后升级就是把这一行里的版本号换成新版号再跑一次。
 >
 > **方式 A1 的前提**：命令里能找到 `git`（`git --version` 有输出就行）。机器上没有 git 就用方式 A2，或者走下面的离线安装。
 
@@ -281,7 +281,7 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
 ```json
 {
   "plugin": "dsh-zh-review-guard",
-  "version": "0.1.1",
+  "version": "0.2.1",
   "instanceId": "1a2b3c4d",
   "pid": 12345,
   "startedAt": "2026-10-02T07:30:00.000Z",
@@ -295,15 +295,17 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
   "lastAt": "……",
   "lastSessionId": "……",
   "lastAction": "replace",
-  "lastSectionNames": ["……", "zh-review-guard", "……"],   ← ③ 列表里要有 zh-review-guard
-  "agentsFile": { "path": "……\\.dsh\\AGENTS.md", "owned": true, "syncedAt": "……", "error": null }
+  "lastSectionCount": 12,                              ← ③ 段数量应 ≥ 1
+  "lastSectionNamesHash": "9f2c…",                     ← ③ 默认不再写完整清单；想看段名就把 recordSectionNames 设为 true
+  "agentsFile": { "path": "……\\.dsh\\AGENTS.md", "owned": true, "ownedBy": "state-hash", "reason": "unchanged", "userContentKept": false, "backup": null, "syncedAt": "……", "error": null }
 }
 ```
 
 同一个目录下还有：
 
-- `assemblies.jsonl` —— 每次装配一行，能看到"哪个会话、做了追加还是替换、当时的段名清单"
+- `assemblies.jsonl` —— 每次装配一行，能看到"哪个会话、做了追加还是替换、段数量 `sectionCount` 与段名哈希 `sectionNamesHash`"
 - `instances\<id>.json` —— 每个插件实例各自一份计数（两个实例时用这个看总量）
+- `agents-state.json` / `backups\` —— 插件对 `AGENTS.md` 的所有权哈希，以及覆盖前的备份
 
 **如果这个目录根本不存在** → 插件一次都没被调用过，去做 [故障排查 C](#c-装完了但看起来没生效)。
 
@@ -320,8 +322,8 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
 ### 9.3 顺带发生的事
 
 插件会把同一份规则文本写进 `C:\Users\<你的用户名>\.dsh\AGENTS.md`。
-**只有两种情况它会写**：这个文件不存在，或者文件本来就是它写的（带上面那个 `managed-by` 标记）。
-你自己手写的 `AGENTS.md` 永远不会被覆盖 —— 这一点会记录在 `status.json` 的 `agentsFile.owned` 里（`false` = 它没动手）。
+**只有这几种情况它会写**：这个文件不存在（或只有空白），或者文件内容与 `zh-review-guard\agents-state.json` 里记录的"上次写入哈希"一致（本插件自己写的，规则变了会就地更新），或者文件全文就是本插件的规则文本、只是 `managed-by` 标记里的版本号不同（老版本留下的文件）。
+你自己手写的 `AGENTS.md` 不会被覆盖 —— 这一点记录在 `status.json` 的 `agentsFile.owned` / `agentsFile.ownedBy` 里（`owned: false` = 它没动手）。确实需要覆盖时，会先把原文件备份到 `zh-review-guard\backups\`（默认保留 5 份，`agentsBackupKeep` 可调）。
 
 ---
 
@@ -342,6 +344,7 @@ node "$env:TEMP\zhg-check\package\test\selftest.mjs"
 ```
 
 > 这一步需要机器上有 `node`。DSH 自带的 node 就行；实在没有，跳过这一步也不影响安装。
+> v0.2.1 起自测共 67 项（看到 `67/67 passed` 同理）；只要没有 `FAIL` 行就算过。
 
 ---
 
@@ -357,7 +360,7 @@ dsh plugin --profile desktop remove dsh-zh-review-guard
 #      删掉带 <!-- managed-by: dsh-zh-review-guard v0.2.0 --> 标记的那段
 #      （或只删掉标记那一行，插件以后就不会再认领这个文件）
 #    - C:\Users\<你的用户名>\.dsh\zh-review-guard\
-#      纯观测数据（status.json / assemblies.jsonl / instances\），留删随意
+#      纯观测数据（status.json / assemblies.jsonl / instances\ / agents-state.json / backups\），留删随意
 
 # 4) 重新启动 App
 ```
@@ -451,7 +454,7 @@ dsh plugin --profile desktop install
 
 ### G. 想确认到底有没有"真的"注入
 
-看 `assemblies.jsonl` 里最新一行的 `sectionNames` 数组 —— 里面有 `zh-review-guard` 就说明这段规则确实进了那一次装配。
+看 `assemblies.jsonl` 里最新一行的 `sectionCount`（≥ 1）与 `sectionNamesHash` —— 默认不写完整段名清单（降低信息暴露面）；想直接看到 `zh-review-guard` 这个名字，把配置里的 `recordSectionNames` 设为 `true`，再触发一次装配。
 
 ### H. 装好了，但怎么知道"主通道"没悄悄失效？
 
@@ -510,9 +513,9 @@ dsh plugin --profile desktop install
 | --- | --- | --- |
 | `<profile>\package.json` | 增加 `dependencies` 与 `dsh.profile.bundles` 各一项 | — |
 | `<profile>\node_modules\dsh-zh-review-guard` | 交给 pnpm 摆放：`file:` / `github:` / 附件 URL 这些来源是**解包出的真实目录**，`link:` 来源是**符号链接**（**不要手改这里**，卸载走 `dsh plugin remove`） | — |
-| `C:\Users\<你>\.dsh\zh-review-guard\` | — | 写 `status.json`、`health.json`、`assemblies.jsonl`、`instances\<id>.json`、卸载时写 `disposed.json` |
+| `C:\Users\<你>\.dsh\zh-review-guard\` | — | 写 `status.json`、`health.json`、`assemblies.jsonl`（超过 `maxLogBytes` 轮转为 `.1`）、`instances\<id>.json`、`agents-state.json`、`backups\<时间戳>.bak`、卸载时写 `disposed.json` |
 | `C:\Users\<你>\.dsh\zh-review-guard\rules.md` | — | **你的**追加规则（只在存在时读；插件不会创建、也不会改它） |
-| `C:\Users\<你>\.dsh\AGENTS.md` | — | 只在"文件不存在"或"文件属于本插件"时写入规则文本 |
+| `C:\Users\<你>\.dsh\AGENTS.md` | — | 只在"文件不存在/为空"、"内容与 `agents-state.json` 记录的哈希一致"或"全文就是本插件的文本（仅版本号不同）"时写入规则文本；覆盖前先备份到 `backups\` |
 
 **不会**：联网、写注册表、动系统环境变量、动 App 自己的安装目录。
 
@@ -544,8 +547,9 @@ dsh plugin --profile desktop install
 | --- | --- |
 | v0.1.0 / v0.1.1 | 两条独立通道、配置项、可观测日志；MIT 许可；保姆级教程 |
 | v0.2.0 | **规则可配置**（`rulesMode` / `rulesFile` / `rulesMaxChars`）；**主通道健康检查**（`health.json`）与**契约自检**（`status.json` 的 `contract`）；自测 57 项 |
+| v0.2.1 | **接管判据收紧 + 覆盖前备份**（`agents-state.json` 记录所有权哈希；`backups\` 默认留 5 份）；**磁盘卫生**（`assemblies.jsonl` 按 `maxLogBytes` 轮转、`instances\` 按 TTL 与数量清理）；**降低暴露面**（默认只记段数量与哈希，`recordSectionNames` 可开）；自测 67 项 |
 
-**从旧版本升级**：把一键安装命令里的 tag 换成 `#v0.2.0` 再跑一次，然后重启 App。`AGENTS.md` 的归属标记只按**前缀** `<!-- managed-by: dsh-zh-review-guard` 认领，所以老版本写下的标记仍会被认领并就地升级 —— 不会出现"文件里还是旧规则、插件却以为那是你手写的、于是停止同步"。
+**从旧版本升级**：把一键安装命令里的 tag 换成新版本号再跑一次，然后重启 App。`AGENTS.md` 的认领先比 `agents-state.json` 里记录的哈希（本插件自己写过的内容），再比全文是否就是本插件的文本（只差版本号也算）—— 所以 v0.2.0 及更老版本写下的文件仍会被认领并就地升级，不会出现"文件里还是旧规则、插件却以为那是你手写的、于是停止同步"。注意 v0.2.1 起**取消了"只要带前缀标记就整文件覆盖"**的旧行为：只有确实属于本插件的文件才会被改写，且改前会备份。
 
 ## 本机复验记录（发布时留下的事实）
 
@@ -577,3 +581,18 @@ dsh plugin --profile desktop install
 再在**一个隔离的 `DSH_HOME`（全新目录）**里从零装一遍并真正启动一次：插件在 boot 阶段即被挂载 —— 该目录下自动出现 `AGENTS.md`（1562 bytes，首行 `<!-- managed-by: dsh-zh-review-guard v0.2.0 -->`）与 `zh-review-guard\status.json`（`version=0.2.0`、`hookErrors=0`、`contract={onAvailable:true, registerOk:true}`）。复检后临时 profile 与隔离 `DSH_HOME` 都已删除。
 
 > 一处未覆盖（诚实说明）：本机 profile 的 app 是 Web UI，`dsh ... headless` 不是它的参数，所以"从 Release 装的副本在一次完整 LLM 会话里被装配"没有单独跑通；该结论由上面的 boot 挂载证据 + 本机真实运行证据（`status.json` 的 `assemblies` 递增、`lastSectionNames` 含 `zh-review-guard`）共同支撑。
+
+### v0.2.1 复检（本机源码树 · 尚未发布到 Release）
+
+v0.2.1 是一次安全加固版，改动集中在 `lib/index.js` 与自测里：
+
+- **接管判据收紧**：`AGENTS.md` 只在①不存在/为空、②内容与 `zh-review-guard\agents-state.json` 记录的哈希一致、③全文就是本插件文本（仅版本号不同）时才写入；旧行为"带前缀标记就整文件覆盖"已取消 —— 这修掉了"用户文件里只要出现过一次该标记就可能被整份覆盖"的风险。
+- **覆盖前备份**：确实要改写时先落到 `zh-review-guard\backups\AGENTS.md.<时间戳>.bak`，默认保留 5 份（`agentsBackupKeep`）。
+- **磁盘卫生**：`assemblies.jsonl` 超过 `maxLogBytes`（默认约 2 MB）轮转为 `.1`；`instances\` 按 `instancesTtlMs`（7 天）与 `instancesMaxFiles`（20）清理，当前实例永不删。
+- **降低暴露面**：装配日志默认只记 `sectionCount` 与 `sectionNamesHash`，不再逐行写完整段名清单（要写就把 `recordSectionNames` 设为 `true`）。
+
+本机验证（2026-10-02）：
+
+- `node test/selftest.mjs` → `67/67 passed`，`exit=0`（v0.2.0 是 57 项）；
+- 另跑一个独立脚本，在**临时 `DSH_HOME`** 里重放四个场景：①含标记片段的用户文件逐字节保留、不产生备份；②只差版本号的旧全文被就地升级、生成备份与 `agents-state.json`；③插件自己写过的内容仍可继续更新（靠状态哈希）；④纯用户手写文件不动 → `VERIFY OK 9/9`；
+- 打包产物解包后自测同样 `67/67 passed`；大小与 SHA256 见 [RELEASE-NOTES-v0.2.1.md](./RELEASE-NOTES-v0.2.1.md)（该版本尚未发布到 GitHub Release，发布后会补上 Release 下载复验）。

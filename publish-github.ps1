@@ -16,8 +16,10 @@ Usage:
 Optional parameters:
   -Repo dsh-zh-review-guard   repository name
   -Visibility public|private  default public
-  -Tag v0.1.0                 release tag
-  -Notes RELEASE-NOTES-v0.1.0.md   release body file (relative to this script)
+  -Tag v0.2.1                 release tag; also drives the default commit message and release title
+  -Notes RELEASE-NOTES-v0.2.1.md   release body file (relative to this script)
+  -Title "..."                release title (default "<Tag> - dsh-zh-review-guard")
+  -CommitMessage "..."        commit message (default "release: <Tag> - dsh-zh-review-guard (...)")
   -GitName / -GitEmail        repo-local commit identity; derived from the gh account when omitted
   -Proxy http://<host>:<port>  set HTTP(S)_PROXY for gh and git (only if your network needs it)
   -NoPush                     local init + commit only
@@ -41,6 +43,8 @@ param(
   [ValidateSet('public', 'private')][string]$Visibility = 'public',
   [string]$Tag = 'v0.1.0',
   [string]$Notes = 'RELEASE-NOTES-v0.1.0.md',
+  [string]$Title = '',            # release title; defaults to "<Tag> - dsh-zh-review-guard"
+  [string]$CommitMessage = '',    # commit message; defaults to "release: <Tag> ..."
   [string]$GitName = '',
   [string]$GitEmail = '',
   [string]$Proxy = '',
@@ -114,7 +118,8 @@ Write-Host "repo-local commit identity: $GitName <$GitEmail>"
 
 & git add -A
 & git -c core.pager=cat status --short | Out-Host
-& git -c core.pager=cat commit -m 'dsh-zh-review-guard v0.1.0: per-session guard (visible reasoning + Simplified Chinese)' 2>&1 | Out-Host
+if (-not $CommitMessage) { $CommitMessage = "release: $Tag - dsh-zh-review-guard (per-session guard: visible reasoning + Simplified Chinese)" }
+& git -c core.pager=cat commit -m $CommitMessage 2>&1 | Out-Host
 if ($LASTEXITCODE -ne 0) { Write-Host 'commit returned non-zero (nothing to commit?) - continuing' -ForegroundColor Yellow }
 
 if ($NoPush) {
@@ -165,7 +170,8 @@ if ($NoRelease) { Write-Host 'NoRelease: repo pushed, release skipped'; exit 0 }
 if (-not (Test-Path $notesPath)) { Fail "notes file not found: $notesPath" }
 
 Write-Host "== create release $Tag =="
-& gh release create $Tag $Tgz --title "$Tag - first distributable release" --notes-file $notesPath 2>&1 | Out-Host
+if (-not $Title) { $Title = "$Tag - dsh-zh-review-guard" }
+& gh release create $Tag $Tgz --title $Title --notes-file $notesPath 2>&1 | Out-Host
 if ($LASTEXITCODE -ne 0) { Fail 'gh release create failed' }
 
 Write-Host '== verify: list assets, then re-download the tgz =='

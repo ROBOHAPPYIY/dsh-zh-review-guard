@@ -2,10 +2,10 @@
  * 自测：用假 ctx / 假 assembly 验证护栏插件的核心契约。
  * 运行：node test/selftest.mjs   （不需要 DSH 运行时，零依赖）
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { apply, ASSEMBLE_EVENT, evaluateHealth, MARKER, MARKER_PREFIX, RULES_BASELINE, RULES_TEXT, resolveRules, scanSessions, VERSION, name } from '../lib/index.js'
+import { apply, ASSEMBLE_EVENT, evaluateHealth, isPluginOwnedText, MARKER, MARKER_PREFIX, pruneInstancesDir, RULES_BASELINE, RULES_TEXT, resolveRules, rotateLogFile, scanSessions, VERSION, name } from '../lib/index.js'
 
 const rows = []
 const check = (label, ok, extra = '') => {
@@ -71,7 +71,7 @@ check('同会话首条 fresh=true', ok_lines[0] && ok_lines[0].fresh === true)
 check('同会话第二条 fresh=false', ok_lines[1] && ok_lines[1].fresh === false)
 check('新会话 fresh=true 且 sessionId 记录正确', ok_lines[2] && ok_lines[2].fresh === true && ok_lines[2].sessionId === 's-test-2')
 check('子会话被标记 isSubagent=true', ok_lines[3] && ok_lines[3].isSubagent === true)
-check('日志含段名清单（可核对注入位置）', Array.isArray(ok_lines[0] && ok_lines[0].sectionNames) && ok_lines[0].sectionNames.includes('zh-review-guard'))
+check('日志含段数量与名称哈希（默认不落宿主全部段名）', Number.isInteger(ok_lines[0] && ok_lines[0].sectionCount) && typeof (ok_lines[0] && ok_lines[0].sectionNamesHash) === 'string' && (ok_lines[0] && ok_lines[0].sectionNames) === undefined)
 
 const statusPath = join(dir, 'status.json')
 check('写出 status.json', existsSync(statusPath))
@@ -81,6 +81,15 @@ check('status 统计：hookErrors=1（抛错被计数）', status.hookErrors ===
 check('status 记录了规则哈希', typeof status.rulesHash === 'string' && status.rulesHash.length === 16)
 check('日志行带 8 位实例 id（多实例可区分）', /^[0-9a-f]{8}$/.test(String(ok_lines[0] && ok_lines[0].instanceId)))
 check('写出每实例状态 instances/<id>.json', existsSync(join(dir, 'instances', `${status.instanceId}.json`)))
+check('status 默认不落宿主全部段名（只记数量与哈希）', status.lastSectionNames === null && status.lastSectionCount === 2 && typeof status.lastSectionNamesHash === 'string')
+
+// 需要诊断宿主装配结构时才显式打开 recordSectionNames
+const recDir = mkdtempSync(join(tmpdir(), 'zh-guard-rec-'))
+const recHandlers = []
+apply({ on(e, fn) { recHandlers.push({ e, fn }) }, effect() {} }, { logDir: recDir, syncAgentsFile: false, recordSectionNames: true })
+const recOut = await recHandlers.find((h) => h.e === 'system-prompt/assemble').fn({}, { agent: { session: { id: 's-rec-1' } } }, fakeNext)
+const recLine = JSON.parse(readFileSync(join(recDir, 'assemblies.jsonl'), 'utf8').trim().split('\n')[0])
+check('recordSectionNames=true 时才记录段名清单', recOut.sections.length === 2 && Array.isArray(recLine.sectionNames) && recLine.sectionNames.includes('zh-review-guard'))
 
 for (const d of disposers) {
   if (typeof d === 'function') d()
@@ -97,16 +106,67 @@ process.env.DSH_HOME = home2
 const agentsPath = join(home2, 'AGENTS.md')
 const quietCtx = () => ({ on() {}, effect() {} })
 
-// a) 老版本（v0.1.0）写下的 AGENTS.md 在升级后仍被认领，并就地升级为当前文本
-writeFileSync(agentsPath, '<!-- managed-by: dsh-zh-review-guard v0.1.0 -->\n# 老版本写入\n', 'utf8')
+// a) 老版本（v0.1.0）写下的完整文本在升级后仍被认领，并就地升级为当前文本
+const legacyText = RULES_TEXT.replace(MARKER, '<!-- managed-by: dsh-zh-review-guard v0.1.0 -->') + '\n'
+writeFileSync(agentsPath, legacyText, 'utf8')
 apply(quietCtx(), { logDir: join(home2, 'log-a'), syncAgentsFile: true })
-check('通道 2：老版本(v0.1.0)标记的文件仍被认领并升级', readFileSync(agentsPath, 'utf8').trim() === RULES_TEXT.trim())
+check('通道 2：仅版本号不同的旧版本文本仍被认领并升级', readFileSync(agentsPath, 'utf8') === RULES_TEXT + '\n')
+const backupDirA = join(home2, 'log-a', 'backups')
+check(
+  '通道 2：覆盖前备份了被替换的旧内容',
+  existsSync(backupDirA) && readdirSync(backupDirA).some((f) => f.endsWith('.bak') && readFileSync(join(backupDirA, f), 'utf8') === legacyText),
+)
+const statusA = JSON.parse(readFileSync(join(home2, 'log-a', 'status.json'), 'utf8'))
+check(
+  '通道 2：升级原因记为 upgraded 且带备份文件名',
+  statusA.agentsFile.owned === true && statusA.agentsFile.reason === 'upgraded' && typeof statusA.agentsFile.backup === 'string',
+)
 
 // b) 用户手写的 AGENTS.md 绝不被覆盖
 const userText = '# 我自己写的规则\n不要动我\n'
 writeFileSync(agentsPath, userText, 'utf8')
 apply(quietCtx(), { logDir: join(home2, 'log-b'), syncAgentsFile: true })
 check('通道 2：用户手写的 AGENTS.md 绝不被覆盖', readFileSync(agentsPath, 'utf8') === userText)
+
+// d) v0.2.1 修复：文件里出现过 MARKER 片段但另有用户内容 —— 绝不覆盖
+const mixedText = `${MARKER_PREFIX} v0.2.0 -->\n# 我的项目约定\n- 禁止自动 push\n`
+writeFileSync(agentsPath, mixedText, 'utf8')
+apply(quietCtx(), { logDir: join(home2, 'log-d'), syncAgentsFile: true })
+check('通道 2：含标记片段的用户文件被完整保留（不再被整体覆盖）', readFileSync(agentsPath, 'utf8') === mixedText)
+const statusD = JSON.parse(readFileSync(join(home2, 'log-d', 'status.json'), 'utf8'))
+check(
+  '通道 2：保留原因被记录（owned=false / kept-user-content）',
+  statusD.agentsFile.owned === false && statusD.agentsFile.reason === 'kept-user-content' && statusD.agentsFile.userContentKept === true,
+)
+check(
+  '认领判定：相同文本或仅版本号不同→接管；多出任何内容→不接管',
+  isPluginOwnedText(RULES_TEXT, RULES_TEXT) === true &&
+    isPluginOwnedText(legacyText, RULES_TEXT) === true &&
+    isPluginOwnedText(mixedText, RULES_TEXT) === false &&
+    isPluginOwnedText('# 用户规则\n', RULES_TEXT) === false &&
+    isPluginOwnedText('', RULES_TEXT) === true,
+)
+
+// f) 日志轮转：达阈值改名 .1，只保留一代
+const rotDir = mkdtempSync(join(tmpdir(), 'zh-guard-rot-'))
+const rotFile = join(rotDir, 'assemblies.jsonl')
+writeFileSync(rotFile, 'x'.repeat(200), 'utf8')
+check('日志轮转：未达阈值不动', rotateLogFile(rotFile, 1000) === false && !existsSync(rotFile + '.1'))
+check('日志轮转：达阈值改名 .1', rotateLogFile(rotFile, 100) === true && existsSync(rotFile + '.1') && !existsSync(rotFile))
+
+// g) instances 清理：过期快照被删，当前实例与上限内的最新快照保留
+const instDir = mkdtempSync(join(tmpdir(), 'zh-guard-inst-'))
+const staleInst = join(instDir, 'aaaa0001.json')
+writeFileSync(staleInst, '{}', 'utf8')
+const oldTime = new Date(Date.now() - 30 * 86400000)
+utimesSync(staleInst, oldTime, oldTime)
+writeFileSync(join(instDir, 'bbbb0002.json'), '{}', 'utf8')
+writeFileSync(join(instDir, 'mine0003.json'), '{}', 'utf8')
+const pruned = pruneInstancesDir(instDir, { ttlMs: 7 * 86400000, maxFiles: 5, keepFile: 'mine0003.json' })
+check(
+  'instances 清理：过期快照被删、当前实例保留',
+  pruned.removed === 1 && !existsSync(staleInst) && existsSync(join(instDir, 'bbbb0002.json')) && existsSync(join(instDir, 'mine0003.json')),
+)
 
 // c) 文件不存在时创建并写入
 const home3 = mkdtempSync(join(tmpdir(), 'zh-guard-home3-'))
