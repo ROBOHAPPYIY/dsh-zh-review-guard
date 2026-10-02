@@ -5,7 +5,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { apply, ASSEMBLE_EVENT, evaluateHealth, isPluginOwnedText, MARKER, MARKER_PREFIX, pruneInstancesDir, RULES_BASELINE, RULES_TEXT, resolveRules, rotateLogFile, scanSessions, VERSION, name } from '../lib/index.js'
+import { apply, ASSEMBLE_EVENT, buildAgentsDigestText, evaluateHealth, isPluginDigestText, isPluginOwnedText, MARKER, MARKER_PREFIX, pruneInstancesDir, RULES_BASELINE, RULES_DIGEST_TITLE, RULES_TEXT, resolveRules, rotateLogFile, scanSessions, VERSION, name } from '../lib/index.js'
 
 const rows = []
 const check = (label, ok, extra = '') => {
@@ -106,11 +106,17 @@ process.env.DSH_HOME = home2
 const agentsPath = join(home2, 'AGENTS.md')
 const quietCtx = () => ({ on() {}, effect() {} })
 
-// a) 老版本（v0.1.0）写下的完整文本在升级后仍被认领，并就地升级为当前文本
+// a) 老版本（v0.1.0）写下的完整文本在升级后仍被认领，并就地降级为精简兜底版（v0.2.2 默认）
 const legacyText = RULES_TEXT.replace(MARKER, '<!-- managed-by: dsh-zh-review-guard v0.1.0 -->') + '\n'
+const digest2 = buildAgentsDigestText(2)
 writeFileSync(agentsPath, legacyText, 'utf8')
 apply(quietCtx(), { logDir: join(home2, 'log-a'), syncAgentsFile: true })
-check('通道 2：仅版本号不同的旧版本文本仍被认领并升级', readFileSync(agentsPath, 'utf8') === RULES_TEXT + '\n')
+check('通道 2：仅版本号不同的旧版本文本仍被认领并升级为精简兜底版', readFileSync(agentsPath, 'utf8') === digest2 + '\n')
+check(
+  'v0.2.2：精简兜底版远小于完整正文，且带标记与说明',
+  digest2.length * 2 < RULES_TEXT.length && digest2.startsWith(MARKER) && digest2.includes(RULES_DIGEST_TITLE),
+  `digest=${digest2.length} full=${RULES_TEXT.length}`,
+)
 const backupDirA = join(home2, 'log-a', 'backups')
 check(
   '通道 2：覆盖前备份了被替换的旧内容',
@@ -120,6 +126,11 @@ const statusA = JSON.parse(readFileSync(join(home2, 'log-a', 'status.json'), 'ut
 check(
   '通道 2：升级原因记为 upgraded 且带备份文件名',
   statusA.agentsFile.owned === true && statusA.agentsFile.reason === 'upgraded' && typeof statusA.agentsFile.backup === 'string',
+)
+check(
+  'v0.2.2：status 记录精简模式（digestLines=2 且 digestChars 与文本一致）',
+  statusA.agentsFile.digestLines === 2 && statusA.agentsFile.digestChars === digest2.length,
+  JSON.stringify({ lines: statusA.agentsFile.digestLines, chars: statusA.agentsFile.digestChars }),
 )
 
 // b) 用户手写的 AGENTS.md 绝不被覆盖
@@ -144,7 +155,17 @@ check(
     isPluginOwnedText(legacyText, RULES_TEXT) === true &&
     isPluginOwnedText(mixedText, RULES_TEXT) === false &&
     isPluginOwnedText('# 用户规则\n', RULES_TEXT) === false &&
-    isPluginOwnedText('', RULES_TEXT) === true,
+    isPluginOwnedText('', RULES_TEXT) === true &&
+    // v0.2.2：多候选 —— 完整正文与精简兜底版都算「本插件写的」
+    isPluginOwnedText(legacyText, [digest2, RULES_TEXT]) === true &&
+    isPluginOwnedText(digest2 + '\n', [digest2, RULES_TEXT]) === true &&
+    isPluginOwnedText(mixedText, [digest2, RULES_TEXT]) === false &&
+    // v0.2.2：精简兜底版按结构识别（与条数无关），完整正文不算精简版
+    isPluginDigestText(digest2 + '\n') === true &&
+    isPluginDigestText(buildAgentsDigestText(5) + '\n') === true &&
+    isPluginDigestText(RULES_TEXT) === false &&
+    isPluginDigestText(mixedText) === false &&
+    isPluginDigestText(`${MARKER}\n${RULES_DIGEST_TITLE}\n\n${RULES_BASELINE}\n`) === false,
 )
 
 // f) 日志轮转：达阈值改名 .1，只保留一代
@@ -167,6 +188,26 @@ check(
   'instances 清理：过期快照被删、当前实例保留',
   pruned.removed === 1 && !existsSync(staleInst) && existsSync(join(instDir, 'bbbb0002.json')) && existsSync(join(instDir, 'mine0003.json')),
 )
+
+// h) v0.2.2：通道 2 精简兜底版 + 开关来回切换（agentsDigestLines N ↔ 0）
+const home4 = mkdtempSync(join(tmpdir(), 'zh-guard-digest-'))
+process.env.DSH_HOME = home4
+const agents4 = join(home4, 'AGENTS.md')
+apply(quietCtx(), { logDir: join(home4, 'log-h1'), syncAgentsFile: true })
+check('v0.2.2：默认写入精简兜底版（前 2 条内置规则）', readFileSync(agents4, 'utf8') === digest2 + '\n')
+check('v0.2.2：精简兜底版仍保留核心第一条', readFileSync(agents4, 'utf8').includes('内部思考（reasoning / thinking）一律使用简体中文。'))
+apply(quietCtx(), { logDir: join(home4, 'log-h2'), syncAgentsFile: true, agentsDigestLines: 0 })
+const full4 = readFileSync(agents4, 'utf8')
+const statusH2 = JSON.parse(readFileSync(join(home4, 'log-h2', 'status.json'), 'utf8'))
+check('v0.2.2：agentsDigestLines=0 可恢复整份全文', full4 === RULES_TEXT + '\n')
+check(
+  'v0.2.2：关掉精简模式时按「自己人」升级并备份',
+  statusH2.agentsFile.reason === 'upgraded' && typeof statusH2.agentsFile.backup === 'string' && statusH2.agentsFile.digestLines === null,
+)
+apply(quietCtx(), { logDir: join(home4, 'log-h3'), syncAgentsFile: true })
+check('v0.2.2：再打开精简模式仍能认领并切回', readFileSync(agents4, 'utf8') === digest2 + '\n')
+const backupsH = readdirSync(join(home4, 'log-h3', 'backups'))
+check('v0.2.2：来回切换每次都留备份', backupsH.some((f) => readFileSync(join(home4, 'log-h3', 'backups', f), 'utf8') === full4))
 
 // c) 文件不存在时创建并写入
 const home3 = mkdtempSync(join(tmpdir(), 'zh-guard-home3-'))
@@ -241,7 +282,9 @@ mkdirSync(dirname(rules5), { recursive: true })
 writeFileSync(rules5, '- 追加规则 A\n', 'utf8')
 const liveDir = join(home5, 'log-live')
 const liveHandlers = []
-apply({ on: (e, f) => liveHandlers.push({ e, f }), effect: (fn) => disposers.push(fn()) }, { logDir: liveDir, syncIntervalMs: 5000, staleGraceMs: 1000 })
+// 这一段专门验证「rules.md 热更新会带动通道 2」，所以显式关掉精简模式（写整份全文）；
+// 默认的精简兜底版行为由上面的 h) 覆盖。
+apply({ on: (e, f) => liveHandlers.push({ e, f }), effect: (fn) => disposers.push(fn()) }, { logDir: liveDir, syncIntervalMs: 5000, staleGraceMs: 1000, agentsDigestLines: 0 })
 const readLive = () => JSON.parse(readFileSync(join(liveDir, 'status.json'), 'utf8'))
 check('集成：启动即读到 rules.md（append）', readLive().rules.source === 'builtin+file')
 check('集成：契约自检记录事件名与注册结果', readLive().contract.event === ASSEMBLE_EVENT && readLive().contract.registerOk === true)
@@ -258,7 +301,7 @@ utimesSync(rules5, new Date(), new Date(Date.now() + 3000))
 await new Promise((r) => setTimeout(r, 5800))
 const live = readLive()
 check('集成：tick 发现 rules.md 变化并热更新（rulesReloads>=1）', live.rulesReloads >= 1, `got=${live.rulesReloads}`)
-check('集成：热更新后通道 2 也同步为新文本', readFileSync(join(home5, 'AGENTS.md'), 'utf8').includes('追加规则 B'))
+check('集成：热更新后通道 2（全文模式）也同步为新文本', readFileSync(join(home5, 'AGENTS.md'), 'utf8').includes('追加规则 B'))
 check('集成：加载后出现新会话却零装配 → health.stale=true', live.health.stale === true, JSON.stringify(live.health.reasons))
 check('集成：写出 health.json（心跳与判定依据）', existsSync(join(liveDir, 'health.json')))
 check('集成：health.json 记录 sessionsSeen.newDirsSince>=1', JSON.parse(readFileSync(join(liveDir, 'health.json'), 'utf8')).sessionsSeen.newDirsSince >= 1)

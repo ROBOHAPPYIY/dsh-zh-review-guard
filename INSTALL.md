@@ -75,10 +75,10 @@ $env:HTTPS_PROXY='http://127.0.0.1:7897'
 
 ```powershell
 # 方式 A1：走 git 源，pin 住版本 tag（实测约 11 秒；要求机器上装了 git）
-dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.1
+dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.2
 
 # 方式 A2：直接拉 Release 附件（不需要 git；实测约 40 秒）
-dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.1/dsh-zh-review-guard-0.2.1.tgz
+dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.2/dsh-zh-review-guard-0.2.2.tgz
 ```
 
 把 `desktop` 换成你的 profile 名（Web GUI 用 `web`；不确定就先读[第 4 步](#第-4-步决定装进哪个-profile)）。
@@ -86,7 +86,7 @@ dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-gu
 **应该看到**（方式 A1 的实测输出）：
 
 ```
-+ dsh-zh-review-guard github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.1
++ dsh-zh-review-guard github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.2
 
 Packages: +1
 Progress: resolved 1, reused 0, downloaded 1, added 1, done
@@ -95,7 +95,7 @@ Done in 11.4s using pnpm v11.7.0
 
 看到 `Done in ... using pnpm` 就是装好了（`dsh plugin add` 会自动把包名写进 `dsh.profile.bundles`，**不需要手工改任何文件**）。接着跳到 **[第 7 步：确认装上了](#第-7-步确认装上了)**，再按[第 8 步](#第-8-步重启-dsh-app)重启 App 即可。
 
-> **为什么写 `#v0.2.1`**：`github:用户/仓库#tag` 里 `#` 后面是 tag；pin 住 tag 才能保证每次装到的都是同一份代码。不写 tag 会装 `main` 分支的最新提交。以后升级就是把这一行里的版本号换成新版号再跑一次。
+> **为什么写 `#v0.2.2`**：`github:用户/仓库#tag` 里 `#` 后面是 tag；pin 住 tag 才能保证每次装到的都是同一份代码。不写 tag 会装 `main` 分支的最新提交。以后升级就是把这一行里的版本号换成新版号再跑一次。
 >
 > **方式 A1 的前提**：命令里能找到 `git`（`git --version` 有输出就行）。机器上没有 git 就用方式 A2，或者走下面的离线安装。
 
@@ -108,8 +108,8 @@ Done in 11.4s using pnpm v11.7.0
 ### 办法一：用浏览器下载（第一次装推荐这个）
 
 1. 打开 Release 页面：
-   **https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/tag/v0.2.1**
-2. 页面往下滚到 **Assets**，点 **`dsh-zh-review-guard-0.2.1.tgz`** 下载。
+   **https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/tag/v0.2.2**
+2. 页面往下滚到 **Assets**，点 **`dsh-zh-review-guard-0.2.2.tgz`** 下载。
 3. 保存到一个**不会随手清空的目录**，例如先新建 `D:\dsh-plugins\`，把文件放进去。
 
 > ⚠️ 记住这个位置：**装完之后这个 tgz 不能删、也不能挪**（原因见 [故障排查 D](#d-装完之后-packagejson-里的-tgz-路径失效)）。
@@ -119,7 +119,7 @@ Done in 11.4s using pnpm v11.7.0
 ```powershell
 mkdir D:\dsh-plugins -Force
 cd D:\dsh-plugins
-Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.1/dsh-zh-review-guard-0.2.1.tgz" -OutFile .\dsh-zh-review-guard-0.2.1.tgz
+Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.2/dsh-zh-review-guard-0.2.2.tgz" -OutFile .\dsh-zh-review-guard-0.2.2.tgz
 ```
 
 **如果它卡住不动、或者报 `Unable to connect` / 超时** —— 这是网络到 GitHub 不通，三条替代路，任选一条：
@@ -127,10 +127,10 @@ Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/d
 ```powershell
 # 路线 1：走你本机的代理（把端口改成你自己的；Clash/V2Ray 常见 7890 / 7897）
 $env:HTTPS_PROXY='http://127.0.0.1:7897'
-Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.1/dsh-zh-review-guard-0.2.1.tgz" -OutFile .\dsh-zh-review-guard-0.2.1.tgz
+Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.2/dsh-zh-review-guard-0.2.2.tgz" -OutFile .\dsh-zh-review-guard-0.2.2.tgz
 
 # 路线 2：用镜像前缀（把 ghfast.top/ 加在原始链接前面）
-Invoke-WebRequest "https://ghfast.top/https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.1/dsh-zh-review-guard-0.2.1.tgz" -OutFile .\dsh-zh-review-guard-0.2.1.tgz
+Invoke-WebRequest "https://ghfast.top/https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.2/dsh-zh-review-guard-0.2.2.tgz" -OutFile .\dsh-zh-review-guard-0.2.2.tgz
 ```
 
 路线 3：在能上网的电脑上下好这个 tgz，用 U 盘/网盘拷过来。
@@ -141,7 +141,7 @@ Invoke-WebRequest "https://ghfast.top/https://github.com/ROBOHAPPYIY/dsh-zh-revi
 ## 第 3 步：核对文件（强烈推荐）
 
 ```powershell
-Get-FileHash .\dsh-zh-review-guard-0.2.1.tgz -Algorithm SHA256
+Get-FileHash .\dsh-zh-review-guard-0.2.2.tgz -Algorithm SHA256
 ```
 
 **应该看到**（`Hash` 列要一模一样，大小写无所谓）：
@@ -149,16 +149,16 @@ Get-FileHash .\dsh-zh-review-guard-0.2.1.tgz -Algorithm SHA256
 ```
 Algorithm       Hash                                                                   Path
 ---------       ----                                                                   ----
-SHA256          A6805A63C8CA3A7216C9E1E7BE8A72DB9F9116C7E728352B8764DFEBEC7F77DB       D:\dsh-plugins\...
+SHA256          803C38D6768620D861ECB833A4143CC94574322A07B57BA576AA1B635224E368       D:\dsh-plugins\...
 ```
 
 参考信息：
 
 | 项 | 值 |
 | --- | --- |
-| 文件名 | `dsh-zh-review-guard-0.2.1.tgz` |
-| 大小 | 35 197 字节（约 34.4 KB） |
-| SHA256 | `A6805A63C8CA3A7216C9E1E7BE8A72DB9F9116C7E728352B8764DFEBEC7F77DB` |
+| 文件名 | `dsh-zh-review-guard-0.2.2.tgz` |
+| 大小 | 39077 字节（约 38.2 KB） |
+| SHA256 | `803C38D6768620D861ECB833A4143CC94574322A07B57BA576AA1B635224E368` |
 
 **对不上就别装**——重新下载一次；再对不上请到仓库的 Issues 里说一声。
 
@@ -196,7 +196,7 @@ dsh --profile desktop --dump-config
 ## 第 6 步：安装
 
 ```powershell
-dsh plugin --profile desktop add "D:\dsh-plugins\dsh-zh-review-guard-0.2.1.tgz"
+dsh plugin --profile desktop add "D:\dsh-plugins\dsh-zh-review-guard-0.2.2.tgz"
 ```
 
 把两个地方换成你自己的：`desktop` → 你第 4 步选的 profile；`D:\dsh-plugins\...` → 你第 2 步实际保存的路径（路径带空格也没关系，因为外面有引号）。
@@ -241,7 +241,7 @@ Get-Content "$env:USERPROFILE\.dsh\profiles\desktop\package.json"
 ```json
 {
   "dependencies": {
-    "dsh-zh-review-guard": "file:D:/dsh-plugins/dsh-zh-review-guard-0.2.1.tgz"
+    "dsh-zh-review-guard": "file:D:/dsh-plugins/dsh-zh-review-guard-0.2.2.tgz"
   },
   "dsh": {
     "profile": {
@@ -281,7 +281,7 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
 ```json
 {
   "plugin": "dsh-zh-review-guard",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "instanceId": "1a2b3c4d",
   "pid": 12345,
   "startedAt": "2026-10-02T07:30:00.000Z",
@@ -297,7 +297,7 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
   "lastAction": "replace",
   "lastSectionCount": 12,                              ← ③ 段数量应 ≥ 1
   "lastSectionNamesHash": "9f2c…",                     ← ③ 默认不再写完整清单；想看段名就把 recordSectionNames 设为 true
-  "agentsFile": { "path": "……\\.dsh\\AGENTS.md", "owned": true, "ownedBy": "state-hash", "reason": "unchanged", "userContentKept": false, "backup": null, "syncedAt": "……", "error": null }
+  "agentsFile": { "path": "……\\.dsh\\AGENTS.md", "owned": true, "ownedBy": "state-hash", "reason": "unchanged", "userContentKept": false, "backup": null, "syncedAt": "……", "error": null, "digestLines": 2, "digestChars": 210 }
 }
 ```
 
@@ -314,16 +314,16 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
 随便开个新会话，系统提示词里应该多出这样一段（这是插件注入的常驻 section）：
 
 ```
-<!-- managed-by: dsh-zh-review-guard v0.2.1 -->
+<!-- managed-by: dsh-zh-review-guard v0.2.2 -->
 # 用户全局护栏（dsh-zh-review-guard 插件自动写入 / 每会话注入）
 ...
 ```
 
 ### 9.3 顺带发生的事
 
-插件会把同一份规则文本写进 `C:\Users\<你的用户名>\.dsh\AGENTS.md`。
-**只有这几种情况它会写**：这个文件不存在（或只有空白），或者文件内容与 `zh-review-guard\agents-state.json` 里记录的"上次写入哈希"一致（本插件自己写的，规则变了会就地更新），或者文件全文就是本插件的规则文本、只是 `managed-by` 标记里的版本号不同（老版本留下的文件）。
-你自己手写的 `AGENTS.md` 不会被覆盖 —— 这一点记录在 `status.json` 的 `agentsFile.owned` / `agentsFile.ownedBy` 里（`owned: false` = 它没动手）。确实需要覆盖时，会先把原文件备份到 `zh-review-guard\backups\`（默认保留 5 份，`agentsBackupKeep` 可调）。
+插件会把规则同步进 `C:\Users\<你的用户名>\.dsh\AGENTS.md`。**默认只写精简兜底版**（内置规则前 2 条，约 460 字节 / 7 行，`agentsDigestLines` 可调、设 `0` 则写整份正文）—— 完整规则由系统提示词注入，这里只是上游把整段替换掉时的兜底。
+**只有这几种情况它会写**：这个文件不存在（或只有空白），或者文件内容与 `zh-review-guard\agents-state.json` 里记录的"上次写入哈希"一致（本插件自己写的，规则变了会就地更新），或者文件全文就是本插件的文本、只是 `managed-by` 标记里的版本号不同（完整正文或任意条数的精简兜底版都算，老版本、或换过 `agentsDigestLines` 留下的文件）。
+你自己手写的 `AGENTS.md` 不会被覆盖 —— 这一点记录在 `status.json` 的 `agentsFile.owned` / `agentsFile.ownedBy` 里（`owned: false` = 它没动手）。确实需要覆盖时，会先把原文件备份到 `zh-review-guard\backups\`（默认保留 5 份，`agentsBackupKeep` 可调）。本次写入的是全文还是兜底版、多少字符，记在 `status.json` 的 `agentsFile.digestLines` / `agentsFile.digestChars` 里。
 
 ---
 
@@ -333,18 +333,18 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
 
 ```powershell
 mkdir $env:TEMP\zhg-check -Force
-tar -xzf D:\dsh-plugins\dsh-zh-review-guard-0.2.1.tgz -C $env:TEMP\zhg-check
+tar -xzf D:\dsh-plugins\dsh-zh-review-guard-0.2.2.tgz -C $env:TEMP\zhg-check
 node "$env:TEMP\zhg-check\package\test\selftest.mjs"
 ```
 
 **应该看到**：
 
 ```
-67/67 passed
+75/75 passed
 ```
 
 > 这一步需要机器上有 `node`。DSH 自带的 node 就行；实在没有，跳过这一步也不影响安装。
-> v0.2.1 起自测共 67 项（看到 `67/67 passed` 同理）；只要没有 `FAIL` 行就算过。
+> v0.2.2 起自测共 75 项（看到 `75/75 passed` 同理；v0.2.0 是 57 项、v0.2.1 是 67 项）；只要没有 `FAIL` 行就算过。
 
 ---
 
@@ -357,7 +357,7 @@ dsh plugin --profile desktop remove dsh-zh-review-guard
 
 # 3) 按需清理插件之外的两处残留：
 #    - C:\Users\<你的用户名>\.dsh\AGENTS.md
-#      删掉带 <!-- managed-by: dsh-zh-review-guard v0.2.1 --> 标记的那段
+#      删掉带 <!-- managed-by: dsh-zh-review-guard v0.2.2 --> 标记的那段
 #      （或只删掉标记那一行，插件以后就不会再认领这个文件）
 #    - C:\Users\<你的用户名>\.dsh\zh-review-guard\
 #      纯观测数据（status.json / assemblies.jsonl / instances\ / agents-state.json / backups\），留删随意
@@ -429,7 +429,7 @@ $json = Get-Content $p -Raw
    没输出说明装到别的 profile 去了，去那个 profile 里重装。
 3. **观测目录存在吗？** `C:\Users\<你的用户名>\.dsh\zh-review-guard\status.json` 在不在，`hookErrors` 是不是 `0`。
 4. **是不是还有旧进程活着？** 托盘退出后，用任务管理器确认没有残留的 `DeepSeek Harness.exe`，再启动。
-5. **规则段被上游预设整体替换了？** 这是已知情况，插件用第二条通道（`AGENTS.md` 基线）兜底，首轮也应该能看到规则；README 的「为什么必须准备第二条通道」一节讲了原因。
+5. **规则段被上游预设整体替换了？** 这是已知情况，插件用第二条通道（`AGENTS.md` 基线）兜底，首轮也应该能看到规则；README 的「为什么必须准备第二条通道」一节讲了原因。注意兜底版只含**内置**规则的前 N 条（默认 2），你在 `rules.md` 里追加的自定义规则不进兜底 —— 要么把 `agentsDigestLines` 设为 `0`（写整份正文），要么就靠通道 1。
 
 ### D. 装完之后 package.json 里的 tgz 路径失效
 
@@ -487,7 +487,7 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\health.json" -Raw -Encoding U
 
 ```powershell
 # 1) 解压到稳定目录
-tar -xzf D:\dsh-plugins\dsh-zh-review-guard-0.2.1.tgz -C $env:TEMP\zhg-manual
+tar -xzf D:\dsh-plugins\dsh-zh-review-guard-0.2.2.tgz -C $env:TEMP\zhg-manual
 Move-Item $env:TEMP\zhg-manual\package D:\dsh-plugins\dsh-zh-review-guard
 
 # 2) 手工编辑 C:\Users\<你的用户名>\.dsh\profiles\desktop\package.json
@@ -515,7 +515,7 @@ dsh plugin --profile desktop install
 | `<profile>\node_modules\dsh-zh-review-guard` | 交给 pnpm 摆放：`file:` / `github:` / 附件 URL 这些来源是**解包出的真实目录**，`link:` 来源是**符号链接**（**不要手改这里**，卸载走 `dsh plugin remove`） | — |
 | `C:\Users\<你>\.dsh\zh-review-guard\` | — | 写 `status.json`、`health.json`、`assemblies.jsonl`（超过 `maxLogBytes` 轮转为 `.1`）、`instances\<id>.json`、`agents-state.json`、`backups\<时间戳>.bak`、卸载时写 `disposed.json` |
 | `C:\Users\<你>\.dsh\zh-review-guard\rules.md` | — | **你的**追加规则（只在存在时读；插件不会创建、也不会改它） |
-| `C:\Users\<你>\.dsh\AGENTS.md` | — | 只在"文件不存在/为空"、"内容与 `agents-state.json` 记录的哈希一致"或"全文就是本插件的文本（仅版本号不同）"时写入规则文本；覆盖前先备份到 `backups\` |
+| `C:\Users\<你>\.dsh\AGENTS.md` | — | 只在"文件不存在/为空"、"内容与 `agents-state.json` 记录的哈希一致"或"全文就是本插件的文本（完整正文、或任意条数的精简兜底版，仅版本号不同）"时写入（默认写 `agentsDigestLines` 条内置规则的精简兜底版）；覆盖前先备份到 `backups\` |
 
 **不会**：联网、写注册表、动系统环境变量、动 App 自己的安装目录。
 
@@ -524,12 +524,12 @@ dsh plugin --profile desktop install
 | 想干什么 | 命令 |
 | --- | --- |
 | 看 DSH 能不能用 | `dsh --help` |
-| **一键安装（推荐）** | `dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.1` |
-| 一键安装（没有 git / 不想走 git） | `dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.1/dsh-zh-review-guard-0.2.1.tgz` |
-| 升级到新版本 | 把上面命令里的 `v0.2.1` 换成新版本号再跑一次 |
-| 下载（离线安装用） | `Invoke-WebRequest "<Release 附件直链>" -OutFile .\dsh-zh-review-guard-0.2.1.tgz` |
-| 核对完整性 | `Get-FileHash .\dsh-zh-review-guard-0.2.1.tgz -Algorithm SHA256` |
-| 安装 | `dsh plugin --profile desktop add "D:\dsh-plugins\dsh-zh-review-guard-0.2.1.tgz"` |
+| **一键安装（推荐）** | `dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.2` |
+| 一键安装（没有 git / 不想走 git） | `dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.2/dsh-zh-review-guard-0.2.2.tgz` |
+| 升级到新版本 | 把上面命令里的 `v0.2.2` 换成新版本号再跑一次 |
+| 下载（离线安装用） | `Invoke-WebRequest "<Release 附件直链>" -OutFile .\dsh-zh-review-guard-0.2.2.tgz` |
+| 核对完整性 | `Get-FileHash .\dsh-zh-review-guard-0.2.2.tgz -Algorithm SHA256` |
+| 安装 | `dsh plugin --profile desktop add "D:\dsh-plugins\dsh-zh-review-guard-0.2.2.tgz"` |
 | 确认装上了 | `dsh --profile desktop --dump-config \| Select-String "zh-review-guard"` |
 | 看生效证据 | `Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json" -Raw -Encoding UTF8` |
 | 看主通道健康 | `Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\health.json" -Raw -Encoding UTF8` |
@@ -548,8 +548,11 @@ dsh plugin --profile desktop install
 | v0.1.0 / v0.1.1 | 两条独立通道、配置项、可观测日志；MIT 许可；保姆级教程 |
 | v0.2.0 | **规则可配置**（`rulesMode` / `rulesFile` / `rulesMaxChars`）；**主通道健康检查**（`health.json`）与**契约自检**（`status.json` 的 `contract`）；自测 57 项 |
 | v0.2.1 | **接管判据收紧 + 覆盖前备份**（`agents-state.json` 记录所有权哈希；`backups\` 默认留 5 份）；**磁盘卫生**（`assemblies.jsonl` 按 `maxLogBytes` 轮转、`instances\` 按 TTL 与数量清理）；**降低暴露面**（默认只记段数量与哈希，`recordSectionNames` 可开）；自测 67 项 |
+| v0.2.2 | **通道 2 减重**：`AGENTS.md` 默认只写精简兜底版（`agentsDigestLines`，默认前 2 条内置规则，约 460 字节），完整规则仍由系统提示词注入 —— 每轮护栏开销从约 1076 tokens 降到约 721（省 1/3）；设 `0` 可恢复整份全文；自测 75 项 |
 
 **从旧版本升级**：把一键安装命令里的 tag 换成新版本号再跑一次，然后重启 App。`AGENTS.md` 的认领先比 `agents-state.json` 里记录的哈希（本插件自己写过的内容），再比全文是否就是本插件的文本（只差版本号也算）—— 所以 v0.2.0 及更老版本写下的文件仍会被认领并就地升级，不会出现"文件里还是旧规则、插件却以为那是你手写的、于是停止同步"。注意 v0.2.1 起**取消了"只要带前缀标记就整文件覆盖"**的旧行为：只有确实属于本插件的文件才会被改写，且改前会备份。
+
+v0.2.2 起 `AGENTS.md` 默认写成**精简兜底版**（前 2 条内置规则）。升级后旧的全文本文件会在下一次同步时被认领并改写成兜底版（改前备份到 `backups\`）；想继续保留整份正文，把 `agentsDigestLines` 设为 `0`。
 
 ## 本机复验记录（v0.2.0 发布时留下的事实）
 
@@ -596,3 +599,17 @@ v0.2.1 是一次安全加固版，改动集中在 `lib/index.js` 与自测里：
 - `node test/selftest.mjs` → `67/67 passed`，`exit=0`（v0.2.0 是 57 项）；
 - 另跑一个独立脚本，在**临时 `DSH_HOME`** 里重放四个场景：①含标记片段的用户文件逐字节保留、不产生备份；②只差版本号的旧全文被就地升级、生成备份与 `agents-state.json`；③插件自己写过的内容仍可继续更新（靠状态哈希）；④纯用户手写文件不动 → `VERIFY OK 9/9`；
 - 打包产物解包后自测同样 `67/67 passed`；发布后把 Release 附件（35 197 B）下载回来复验，SHA256 = `A6805A63C8CA3A7216C9E1E7BE8A72DB9F9116C7E728352B8764DFEBEC7F77DB`，与本地打包产物逐字节一致。
+
+### v0.2.2 复检（精简兜底版）
+
+v0.2.2 只改通道 2 的**体积**，不改通道 1 的规则文本，也不取消任何保护：
+
+- **默认写精简兜底版**：`agentsDigestLines`（默认 `2`）条内置规则 + 标记 + 一行说明，约 460 字节 / 7 行；设 `0` 写整份正文（v0.2.1 行为）。
+- **自己写的文件仍能识别**：接管判据新增"结构识别"——只要文件是"标记 + 标题 + 说明 + 编号规则 1..N"的形状就认定为本插件所有，所以上次写 5 条、这次配 2 条时不会把自己的文件误判成用户内容（这是实现时踩过的坑）。
+- **每轮开销**：规则文本 617 字符 ≈ 538 tokens；通道 2 全文 ≈ 538 tokens、兜底版（2 条）≈ 183 tokens → 合计从约 1076 降到约 721（省约 33%），设 `1` 时约 651（省 40%）。
+
+本机验证（2026-10-02）：
+
+- `node test/selftest.mjs` → `75/75 passed`，`exit=0`（v0.2.1 是 67 项）；
+- 独立脚本（`audit\zhg-verify-fix.mjs`）→ `VERIFY OK 13/13`：用户手写文件不动、只差版本号的旧文被认领升级、备份命中、状态哈希一致、默认写兜底版、设 `0` 切回全文；
+- 用真机 `AGENTS.md`（1562 字节 / 14 行 / 首行 v0.2.0）在临时 `DSH_HOME` 里重放：认领 → 备份（1562 字节原样）→ 改写为 459 字节 / 7 行 / 首行 v0.2.2。

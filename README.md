@@ -27,7 +27,7 @@
 
 1. **每个会话的系统提示词里都有一段常驻规则**（section 名 `zh-review-guard`），从会话第一轮就在。
 2. **"到底有没有生效"不用猜**：每次装配都会写一行观测记录，`status.json` 里有装配次数、替换次数与错误计数。
-3. **规则只有一份文本**（`lib/index.js` 的 `RULES_TEXT`），系统提示词 section 与 `AGENTS.md` 都由它生成 —— 不会出现两处文案漂移。
+3. **规则只有一份文本**（`lib/index.js` 的 `RULES_TEXT`）：系统提示词 section 注入完整正文，`AGENTS.md` 默认写**精简兜底版**（前 2 条，约 1/3 体积）—— 同源生成，既不会两处文案漂移，也不会为同一条规则每轮付两份 token。
 
 ### 它注入的规则
 
@@ -55,10 +55,10 @@
 
 ```powershell
 # 走 git 源，pin 住 tag；实测约 11 秒
-dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.1
+dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.2
 
 # 没有 git / 不想走 git：直接拉 Release 附件
-dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.1/dsh-zh-review-guard-0.2.1.tgz
+dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.2/dsh-zh-review-guard-0.2.2.tgz
 ```
 
 把 `desktop` 换成你的 profile 名（Web GUI 用 `web`）。网络不通就先设代理：`$env:HTTPS_PROXY='http://127.0.0.1:7897'`。装完同样要**重启 App**。
@@ -67,13 +67,13 @@ dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-gu
 
 ```powershell
 # 1. 下载（也可在浏览器里点 Release 页的附件）
-Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.1/dsh-zh-review-guard-0.2.1.tgz" -OutFile .\dsh-zh-review-guard-0.2.1.tgz
+Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.2/dsh-zh-review-guard-0.2.2.tgz" -OutFile .\dsh-zh-review-guard-0.2.2.tgz
 
-# 2. 核对（可选但推荐）：35197 B / A6805A63C8CA3A7216C9E1E7BE8A72DB9F9116C7E728352B8764DFEBEC7F77DB
-Get-FileHash .\dsh-zh-review-guard-0.2.1.tgz -Algorithm SHA256
+# 2. 核对（可选但推荐）：39077 B / 803C38D6768620D861ECB833A4143CC94574322A07B57BA576AA1B635224E368
+Get-FileHash .\dsh-zh-review-guard-0.2.2.tgz -Algorithm SHA256
 
 # 3. 装进你的 profile（Web GUI 用 web，桌面端用 desktop）
-dsh plugin --profile desktop add .\dsh-zh-review-guard-0.2.1.tgz
+dsh plugin --profile desktop add .\dsh-zh-review-guard-0.2.2.tgz
 ```
 
 **然后重启 DSH App** —— profile 的 bundle 层栈在启动时装配，装完必须重启才生效。
@@ -95,14 +95,16 @@ dsh plugin --profile desktop remove dsh-zh-review-guard
 | 通道 | 机制 | 覆盖范围 | 抗压缩 |
 | --- | --- | --- | --- |
 | 1（主） | `ctx.on('system-prompt/assemble', …)` 瀑布，按 `sectionName` 注入常驻 section `{ name: 'zh-review-guard', order: 4, text: <解析后的规则文本> }` | 每个会话**每次**装配系统提示词 | 是（官方注入点，不走 transcript） |
-| 2（备） | 把同一份解析后的规则文本同步到 `$DSH_HOME/AGENTS.md`，由 `@deepseek-ai/dsh-agent-instructions` 在会话**首个 pre-step** 作为持久基线注入 | 会话首轮（含通道 1 被上游整体替换的极端情形） | 是（基线逐轮对账） |
+| 2（备） | 把规则同步到 `$DSH_HOME/AGENTS.md`（默认写**精简兜底版**：前 2 条内置规则，`agentsDigestLines` 可调、设 `0` 则写整份正文），由 `@deepseek-ai/dsh-agent-instructions` 在会话**首个 pre-step** 作为持久基线注入 | 会话首轮（含通道 1 被上游整体替换的极端情形） | 是（基线逐轮对账） |
 
 <details>
 <summary>为什么必须准备第二条通道？</summary>
 
 某些会话预设（例如本机的 `router-standard`）在「首轮，还没有任何 tool/call」时会**整体替换** `sections`，只保留自己的段。此时通道 1 注入的段会被丢掉 —— 而通道 2 走的是 `AGENTS.md` 基线，不经过那个替换点，因此首轮也一定有规则。
 
-`AGENTS.md` 的接管规则：**只有下列情形之一成立时才写入** —— ①文件不存在或只有空白；②文件内容与本插件记录的"上次写入哈希"一致（`zh-review-guard/agents-state.json`，用于规则文件改动后就地更新）；③文件全文就是本插件的规则文本，只是 `managed-by` 标记里的版本号不同（老版本留下的文件）。你自己手写的 `AGENTS.md` 不会被覆盖；一旦确实要覆盖，**先备份到 `zh-review-guard/backups/`**（默认保留 5 份），判定结果与依据分别记录在 `status.json` 的 `agentsFile.owned` 与 `agentsFile.ownedBy`。
+`AGENTS.md` 的接管规则：**只有下列情形之一成立时才写入** —— ①文件不存在或只有空白；②文件内容与本插件记录的"上次写入哈希"一致（`zh-review-guard/agents-state.json`，用于规则文件改动后就地更新）；③文件全文就是本插件的文本（完整正文，或**任意条数**的精简兜底版），只是 `managed-by` 标记里的版本号不同（老版本、或换过 `agentsDigestLines` 配置留下的文件）。你自己手写的 `AGENTS.md` 不会被覆盖；一旦确实要覆盖，**先备份到 `zh-review-guard/backups/`**（默认保留 5 份），判定结果与依据分别记录在 `status.json` 的 `agentsFile.owned` 与 `agentsFile.ownedBy`。
+
+注意：精简兜底版只含**内置**规则的前 N 条；你在 `rules.md` 里追加的内容只进通道 1（系统提示词）。要让兜底也覆盖自定义规则，把 `agentsDigestLines` 设为 `0`。
 </details>
 
 ## 配置
@@ -116,6 +118,7 @@ dsh plugin --profile desktop remove dsh-zh-review-guard
 | `order` | `4` | 段排序（router 用 0–3） |
 | `logDir` | `$DSH_HOME/zh-review-guard` | 观测日志目录 |
 | `syncAgentsFile` | `true` | 是否同步 `$DSH_HOME/AGENTS.md` |
+| `agentsDigestLines` | `2` | 同步进 `AGENTS.md` 的内置规则条数（精简兜底版）；`0` = 写整份正文（v0.2.1 的行为） |
 | `backupAgentsFile` | `true` | 覆盖 `AGENTS.md` 前先把原文件备份到 `<logDir>/backups/` |
 | `agentsBackupKeep` | `5` | 备份最多保留几份，超出删最旧 |
 | `includeSubagents` | `true` | 子会话是否也注入 |
@@ -154,7 +157,7 @@ New-Item -ItemType Directory -Force "$env:USERPROFILE\.dsh\zh-review-guard" | Ou
 ## 可观测性
 
 - `$DSH_HOME/zh-review-guard/assemblies.jsonl` — 每次装配一行：`at / instanceId / sessionId / fresh / isSubagent / action / rulesHash / sectionCount / sectionNamesHash`（`recordSectionNames: true` 时才附完整 `sectionNames` 数组）；超过 `maxLogBytes` 轮转为 `assemblies.jsonl.1`
-- `$DSH_HOME/zh-review-guard/status.json` — 最后活跃实例的快照：`assemblies / sessions / appends / replaces / hookErrors / lastSectionCount / lastSectionNamesHash / logRotations / instancesPruned / agentsFile{path,owned,ownedBy,reason,userContentKept,backup,syncedAt,skippedAt,error}`、`rules{source,mode,chars,hash,truncated}`、`rulesReloads`、`contract{event,registerOk,eventKnown,error}`
+- `$DSH_HOME/zh-review-guard/status.json` — 最后活跃实例的快照：`assemblies / sessions / appends / replaces / hookErrors / lastSectionCount / lastSectionNamesHash / logRotations / instancesPruned / agentsFile{path,owned,ownedBy,reason,userContentKept,backup,syncedAt,skippedAt,error,digestLines,digestChars}`、`rules{source,mode,chars,hash,truncated}`、`rulesReloads`、`contract{event,registerOk,eventKnown,error}`
 - `$DSH_HOME/zh-review-guard/health.json` — **主通道心跳**：`level / stale / reasons / checkedAt / sessionsSeen`（判断"主通道是否被上游悄悄改死"就靠它）
 - `$DSH_HOME/zh-review-guard/instances/<id>.json` — 每个实例各自的计数（双实例下不互相覆盖）
 
@@ -163,7 +166,7 @@ New-Item -ItemType Directory -Force "$env:USERPROFILE\.dsh\zh-review-guard" | Ou
 <details>
 <summary><b>会和我自己的 AGENTS.md 打架吗？</b></summary>
 
-不会。只有文件**不存在/为空**、或文件确实是本插件管理的（`agents-state.json` 里记录的哈希对得上，或全文就是本插件的文本）才会写入；你自己手写的文件永远是安全的。确实要覆盖时先备份到 `zh-review-guard/backups/`，判定依据记录在 `status.json` 的 `agentsFile.ownedBy`。
+不会。只有文件**不存在/为空**、或文件确实是本插件管理的（`agents-state.json` 里记录的哈希对得上，或全文就是本插件的文本）才会写入；你自己手写的文件永远是安全的。确实要覆盖时先备份到 `zh-review-guard/backups/`，判定依据记录在 `status.json` 的 `agentsFile.ownedBy`。默认写入的是**精简兜底版**（`agentsDigestLines: 2`，前 2 条内置规则），完整正文在系统提示词里 —— 两处同源，不会互相矛盾。
 </details>
 
 <details>
@@ -201,7 +204,7 @@ New-Item -ItemType Directory -Force "$env:USERPROFILE\.dsh\zh-review-guard" | Ou
 
 ```bash
 git clone https://github.com/ROBOHAPPYIY/dsh-zh-review-guard
-node test/selftest.mjs      # 67 项断言，零依赖，不需要 DSH 运行时
+node test/selftest.mjs      # 75 项断言，零依赖，不需要 DSH 运行时
 ```
 
 在装有 `dsh-super-injector` 的开发机上可以免重启热装配：
