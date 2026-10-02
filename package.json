@@ -1,6 +1,6 @@
 {
   "name": "dsh-zh-review-guard",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "用户级「内部思考可见 + 简体中文」护栏：每个会话装配系统提示词时强制注入用户需求段（常驻 section），并把同一份文本同步到 $DSH_HOME/AGENTS.md。零依赖、无需编译。",
   "private": true,
   "license": "MIT",

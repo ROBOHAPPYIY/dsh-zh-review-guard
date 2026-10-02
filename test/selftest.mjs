@@ -2,10 +2,10 @@
  * 自测：用假 ctx / 假 assembly 验证护栏插件的核心契约。
  * 运行：node test/selftest.mjs   （不需要 DSH 运行时，零依赖）
  */
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { apply, MARKER, MARKER_PREFIX, RULES_TEXT, VERSION, name } from '../lib/index.js'
+import { dirname, join } from 'node:path'
+import { apply, ASSEMBLE_EVENT, evaluateHealth, MARKER, MARKER_PREFIX, RULES_BASELINE, RULES_TEXT, resolveRules, scanSessions, VERSION, name } from '../lib/index.js'
 
 const rows = []
 const check = (label, ok, extra = '') => {
@@ -115,6 +115,102 @@ apply(quietCtx(), { logDir: join(home3, 'log-c'), syncAgentsFile: true })
 check('通道 2：文件不存在时创建并写入规则', existsSync(join(home3, 'AGENTS.md')) && readFileSync(join(home3, 'AGENTS.md'), 'utf8').startsWith(MARKER))
 if (prevHome === undefined) delete process.env.DSH_HOME
 else process.env.DSH_HOME = prevHome
+
+// —— v0.2.0：规则可配置（内置基线 + rules.md 的 append / replace / off / 截断）——
+const rh = mkdtempSync(join(tmpdir(), 'zh-guard-rules-'))
+const rulesPath = join(rh, 'zh-review-guard', 'rules.md')
+
+const rMissing = resolveRules({ home: rh, file: rulesPath, mode: 'append' })
+check('rules：文件缺失时回退内置基线', rMissing.source === 'builtin' && rMissing.text === RULES_BASELINE && rMissing.filePresent === false)
+
+mkdirSync(dirname(rulesPath), { recursive: true })
+writeFileSync(rulesPath, '- 本机追加：汇报时先说结论。\n- 本机追加：不要用 emoji。\n', 'utf8')
+
+const rAppend = resolveRules({ home: rh, file: rulesPath, mode: 'append' })
+check('rules：append 保留内置 7 条并追加本机规则', rAppend.source === 'builtin+file' && rAppend.text.includes('1. 内部思考') && rAppend.text.includes('本机追加：汇报时先说结论') && rAppend.text.includes('## 本机追加规则'))
+check('rules：append 后哈希与字符数相对基线变化', rAppend.hash !== rMissing.hash && rAppend.chars > rMissing.chars)
+check('rules：append 仍以归属标记开头（AGENTS.md 认领依赖它）', rAppend.text.startsWith(MARKER))
+
+const rReplace = resolveRules({ home: rh, file: rulesPath, mode: 'replace' })
+check('rules：replace 替换内置清单且保留归属标记', rReplace.source === 'file' && rReplace.text.startsWith(MARKER) && !rReplace.text.includes('1. 内部思考') && rReplace.text.includes('本机追加：汇报时先说结论'))
+
+const rOff = resolveRules({ home: rh, file: rulesPath, mode: 'off' })
+check('rules：off 模式忽略 rules.md', rOff.source === 'builtin' && rOff.text === RULES_BASELINE)
+
+const rCut = resolveRules({ home: rh, file: rulesPath, mode: 'append', maxChars: 12 })
+check('rules：超出 maxChars 被截断并记录原因', rCut.truncated === true && String(rCut.error).startsWith('truncated'))
+
+// —— v0.2.0：主通道健康判定（纯函数）——
+const H = (over) => evaluateHealth(Object.assign({ loadMs: 1000, nowMs: 1000000, assemblies: 0, lastAssembleMs: 0, sessionsSeen: { count: 3, newDirsSince: 0, newestMtimeMs: 0 }, graceMs: 100, lagMs: 600000 }, over))
+check('health：新装机器无会话活动 → idle（不误报）', H({}).stale === false && H({}).level === 'idle')
+check('health：宽限期内不下结论 → warming', H({ nowMs: 1050 }).level === 'warming')
+check('health：加载后出现新会话却零装配 → stale（强证据）', H({ sessionsSeen: { count: 3, newDirsSince: 2, newestMtimeMs: 999000 } }).stale === true)
+check('health：装配心跳新鲜 → ok', H({ assemblies: 5, lastAssembleMs: 999000, sessionsSeen: { count: 3, newDirsSince: 0, newestMtimeMs: 999000 } }).stale === false)
+check('health：会话活跃但心跳久滞 → stale（弱证据）', H({ assemblies: 5, lastAssembleMs: 100000, sessionsSeen: { count: 3, newDirsSince: 0, newestMtimeMs: 999000 } }).stale === true)
+
+// —— v0.2.0：sessions 扫描（stale 判定的客观锚点）——
+const sh = mkdtempSync(join(tmpdir(), 'zh-guard-sessions-'))
+const sd = join(sh, 'sessions', '--ws--', 'session-abc')
+mkdirSync(sd, { recursive: true })
+writeFileSync(join(sd, 'session.v4.jsonl.zstd'), 'x', 'utf8')
+const scan1 = scanSessions(sh, { sinceMs: 0 })
+check('scan：统计到会话目录与最新写入时间', scan1.count === 1 && scan1.newestMtimeMs > 0)
+check('scan：sinceMs=0 时已有目录计入 newDirsSince', scan1.newDirsSince === 1)
+check('scan：sinceMs 在未来时不误报新会话', scanSessions(sh, { sinceMs: Date.now() + 60000 }).newDirsSince === 0)
+check('scan：目录不存在时安全返回零值', scanSessions(join(sh, 'nope')).count === 0)
+
+// —— v0.2.0：契约自检（注册失败不崩、且留下证据）——
+const badHome = mkdtempSync(join(tmpdir(), 'zh-guard-badctx-'))
+const prevHome2 = process.env.DSH_HOME
+const disposerStart = disposers.length
+process.env.DSH_HOME = badHome
+let badThrew = false
+try {
+  apply({ on() { throw new Error('no such event bus') }, effect() {} }, { logDir: join(badHome, 'log-bad') })
+} catch {
+  badThrew = true
+}
+const badStatus = JSON.parse(readFileSync(join(badHome, 'log-bad', 'status.json'), 'utf8'))
+check('契约：ctx.on 抛错时不崩，并记录 registerOk=false + error', badThrew === false && badStatus.contract.registerOk === false && typeof badStatus.contract.error === 'string')
+
+// —— v0.2.0：集成（真实 tick → rules.md 热更新 + stale 心跳 + health.json）——
+const home5 = mkdtempSync(join(tmpdir(), 'zh-guard-live-'))
+process.env.DSH_HOME = home5
+const rules5 = join(home5, 'zh-review-guard', 'rules.md')
+mkdirSync(dirname(rules5), { recursive: true })
+writeFileSync(rules5, '- 追加规则 A\n', 'utf8')
+const liveDir = join(home5, 'log-live')
+const liveHandlers = []
+apply({ on: (e, f) => liveHandlers.push({ e, f }), effect: (fn) => disposers.push(fn()) }, { logDir: liveDir, syncIntervalMs: 5000, staleGraceMs: 1000 })
+const readLive = () => JSON.parse(readFileSync(join(liveDir, 'status.json'), 'utf8'))
+check('集成：启动即读到 rules.md（append）', readLive().rules.source === 'builtin+file')
+check('集成：契约自检记录事件名与注册结果', readLive().contract.event === ASSEMBLE_EVENT && readLive().contract.registerOk === true)
+check('集成：注册了装配瀑布，且注入文本来自解析后的规则', liveHandlers.some((h) => h.e === ASSEMBLE_EVENT) && readLive().rules.chars > RULES_BASELINE.length)
+
+// 加载之后才出现的会话目录 = 「世界在动」的强证据
+const liveSession = join(home5, 'sessions', '--ws--', 'session-new')
+mkdirSync(liveSession, { recursive: true })
+writeFileSync(join(liveSession, 'session.v4.jsonl.zstd'), 'y', 'utf8')
+// 改 rules.md 并把 mtime 推到未来，确保 tick 一定看得见变化
+writeFileSync(rules5, '- 追加规则 B\n', 'utf8')
+utimesSync(rules5, new Date(), new Date(Date.now() + 3000))
+
+await new Promise((r) => setTimeout(r, 5800))
+const live = readLive()
+check('集成：tick 发现 rules.md 变化并热更新（rulesReloads>=1）', live.rulesReloads >= 1, `got=${live.rulesReloads}`)
+check('集成：热更新后通道 2 也同步为新文本', readFileSync(join(home5, 'AGENTS.md'), 'utf8').includes('追加规则 B'))
+check('集成：加载后出现新会话却零装配 → health.stale=true', live.health.stale === true, JSON.stringify(live.health.reasons))
+check('集成：写出 health.json（心跳与判定依据）', existsSync(join(liveDir, 'health.json')))
+check('集成：health.json 记录 sessionsSeen.newDirsSince>=1', JSON.parse(readFileSync(join(liveDir, 'health.json'), 'utf8')).sessionsSeen.newDirsSince >= 1)
+
+for (let i = disposerStart; i < disposers.length; i++) {
+  const d = disposers[i]
+  if (typeof d === 'function') d()
+}
+check('集成：新增实例的 disposer 可安全调用（停掉 tick）', true)
+
+if (prevHome2 === undefined) delete process.env.DSH_HOME
+else process.env.DSH_HOME = prevHome2
 
 for (const [s, label, extra] of rows) console.log(`${s}  ${label}${extra ? '  (' + extra + ')' : ''}`)
 const failed = rows.filter((r) => r[0] === 'FAIL').length
