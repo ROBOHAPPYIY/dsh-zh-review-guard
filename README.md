@@ -55,10 +55,10 @@
 
 ```powershell
 # 走 git 源，pin 住 tag；实测约 11 秒
-dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.0
+dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.1
 
 # 没有 git / 不想走 git：直接拉 Release 附件
-dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.0/dsh-zh-review-guard-0.2.0.tgz
+dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.1/dsh-zh-review-guard-0.2.1.tgz
 ```
 
 把 `desktop` 换成你的 profile 名（Web GUI 用 `web`）。网络不通就先设代理：`$env:HTTPS_PROXY='http://127.0.0.1:7897'`。装完同样要**重启 App**。
@@ -67,13 +67,13 @@ dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-gu
 
 ```powershell
 # 1. 下载（也可在浏览器里点 Release 页的附件）
-Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.0/dsh-zh-review-guard-0.2.0.tgz" -OutFile .\dsh-zh-review-guard-0.2.0.tgz
+Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.2.1/dsh-zh-review-guard-0.2.1.tgz" -OutFile .\dsh-zh-review-guard-0.2.1.tgz
 
-# 2. 核对（可选但推荐）：28166 B / 9345A147858623DEAAA92FB843CAD001946909FE3E4F72EEA4E5476D673548A6
-Get-FileHash .\dsh-zh-review-guard-0.2.0.tgz -Algorithm SHA256
+# 2. 核对（可选但推荐）：35197 B / A6805A63C8CA3A7216C9E1E7BE8A72DB9F9116C7E728352B8764DFEBEC7F77DB
+Get-FileHash .\dsh-zh-review-guard-0.2.1.tgz -Algorithm SHA256
 
 # 3. 装进你的 profile（Web GUI 用 web，桌面端用 desktop）
-dsh plugin --profile desktop add .\dsh-zh-review-guard-0.2.0.tgz
+dsh plugin --profile desktop add .\dsh-zh-review-guard-0.2.1.tgz
 ```
 
 **然后重启 DSH App** —— profile 的 bundle 层栈在启动时装配，装完必须重启才生效。
