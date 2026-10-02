@@ -21,7 +21,7 @@ Get-FileHash .\dsh-zh-review-guard-0.1.0.tgz -Algorithm SHA256   # 对照下面�
 dsh plugin --profile desktop add .\dsh-zh-review-guard-0.1.0.tgz
 ```
 
-`add` 会自动把包名写进 profile 的 `dsh.profile.bundles`（`dependencies` 记 `file:...tgz`，`bundles` 从 `[]` 变 `["dsh-zh-review-guard"]`），装完**重启 App** 生效。完整步骤、验证方法与实测踩到的坑（profile `package.json` 不能带 BOM、tgz 路径不能删等）见包内 `INSTALL.md`。
+`add` 会自动把包名写进 profile 的 `dsh.profile.bundles`（`dependencies` 记 `file:...tgz`，`bundles` 从 `[]` 变 `["dsh-zh-review-guard"]`），装完**重启 App** 生效。完整步骤、验证方法与实测踩到的坑（profile `package.json` 不能带 BOM、tgz 路径不能删等）见 **`INSTALL.md`** —— 已重写为**保姆级分步教程**（开始之前 → 下载 → 核对哈希 → 选 profile → 安装 → 重启 → 验证 → 卸载 → 故障排查 A–G），在线版：https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/blob/main/INSTALL.md 。
 
 ## 资产
 
@@ -35,3 +35,7 @@ dsh plugin --profile desktop add .\dsh-zh-review-guard-0.1.0.tgz
 
 - `engines`：`node >= 22`、`dsh >= 0.0.1-rc`
 - 实测环境：DSH 0.2.0-rc.2 / Windows / profile `desktop`
+
+## 许可证
+
+[MIT](./LICENSE) © 2026 ROBOHAPPYIY —— 可自由使用、修改、再分发（含商用、含二次封装），保留版权声明即可。
