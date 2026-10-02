@@ -509,7 +509,7 @@ dsh plugin --profile desktop install
 | 位置 | 安装时 | 运行时 |
 | --- | --- | --- |
 | `<profile>\package.json` | 增加 `dependencies` 与 `dsh.profile.bundles` 各一项 | — |
-| `<profile>\node_modules\dsh-zh-review-guard` | 建 junction，指向 `.pnpm\dsh-zh-review-guard@file+...\` | — |
+| `<profile>\node_modules\dsh-zh-review-guard` | 交给 pnpm 摆放：`file:` / `github:` / 附件 URL 这些来源是**解包出的真实目录**，`link:` 来源是**符号链接**（**不要手改这里**，卸载走 `dsh plugin remove`） | — |
 | `C:\Users\<你>\.dsh\zh-review-guard\` | — | 写 `status.json`、`health.json`、`assemblies.jsonl`、`instances\<id>.json`、卸载时写 `disposed.json` |
 | `C:\Users\<你>\.dsh\zh-review-guard\rules.md` | — | **你的**追加规则（只在存在时读；插件不会创建、也不会改它） |
 | `C:\Users\<你>\.dsh\AGENTS.md` | — | 只在"文件不存在"或"文件属于本插件"时写入规则文本 |
@@ -556,3 +556,24 @@ dsh plugin --profile desktop install
 - 在一个**全新的空白 profile** 上 `dsh plugin --profile <p> add <tgz>` → `exit=0`；
 - `dsh --profile <p> --dump-config` 里出现 `# == dsh-zh-review-guard` 层，且 `<profile>\package.json` 自动写入 `dependencies` 与 `dsh.profile.bundles` 两项；
 - 复验用的临时 profile 已删除，没有留在你的 `profiles\` 目录里。
+
+### v0.2.0 安装链路复检（三条路各走一遍）
+
+在三个**全新空白 profile** 上各装一次，装完检查同一组事实：
+
+| 安装方式 | 结果 | 耗时 | 写进 `dependencies` 的值 |
+| --- | --- | --- | --- |
+| 离线：`add <本地 tgz>` | `exit=0` | 322 ms | `file:D:/.../dsh-zh-review-guard-0.2.0.tgz` |
+| 一键：`add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.0` | `exit=0` | 13.8 s | `github:ROBOHAPPYIY/dsh-zh-review-guard#v0.2.0` |
+| 一键：`add <Release 附件 URL>` | `exit=0` | 3.1 s | 该附件 URL |
+
+三种方式装完，检查结果**完全一致**：
+
+- `<profile>\package.json` 自动写入 `dependencies` 一项，并把包名追加进 `dsh.profile.bundles`；
+- `<profile>\node_modules\dsh-zh-review-guard\` 下文件齐全：`lib`、`test`、`cordis.patch.yml`、`INSTALL.md`、`LICENSE`、`package.json`、`README.md`（与 tgz 内容一致）；
+- 包内 `node test/selftest.mjs` → `57/57 passed`，`exit=0`；
+- `dsh --profile <p> --dump-config` 里出现该 bundle 层（有 3 行提到 `dsh-zh-review-guard`）。
+
+再在**一个隔离的 `DSH_HOME`（全新目录）**里从零装一遍并真正启动一次：插件在 boot 阶段即被挂载 —— 该目录下自动出现 `AGENTS.md`（1562 bytes，首行 `<!-- managed-by: dsh-zh-review-guard v0.2.0 -->`）与 `zh-review-guard\status.json`（`version=0.2.0`、`hookErrors=0`、`contract={onAvailable:true, registerOk:true}`）。复检后临时 profile 与隔离 `DSH_HOME` 都已删除。
+
+> 一处未覆盖（诚实说明）：本机 profile 的 app 是 Web UI，`dsh ... headless` 不是它的参数，所以"从 Release 装的副本在一次完整 LLM 会话里被装配"没有单独跑通；该结论由上面的 boot 挂载证据 + 本机真实运行证据（`status.json` 的 `assemblies` 递增、`lastSectionNames` 含 `zh-review-guard`）共同支撑。
