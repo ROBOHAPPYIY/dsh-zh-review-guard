@@ -613,3 +613,4 @@ v0.2.2 只改通道 2 的**体积**，不改通道 1 的规则文本，也不取
 - `node test/selftest.mjs` → `75/75 passed`，`exit=0`（v0.2.1 是 67 项）；
 - 独立脚本（`audit\zhg-verify-fix.mjs`）→ `VERIFY OK 13/13`：用户手写文件不动、只差版本号的旧文被认领升级、备份命中、状态哈希一致、默认写兜底版、设 `0` 切回全文；
 - 用真机 `AGENTS.md`（1562 字节 / 14 行 / 首行 v0.2.0）在临时 `DSH_HOME` 里重放：认领 → 备份（1562 字节原样）→ 改写为 459 字节 / 7 行 / 首行 v0.2.2。
+- 发布：<https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/tag/v0.2.2>；附件 `dsh-zh-review-guard-0.2.2.tgz` 39 077 字节，SHA256 `803C38D6768620D861ECB833A4143CC94574322A07B57BA576AA1B635224E368`，下载回来复验逐字节一致、包内自测 `75/75 passed`。
