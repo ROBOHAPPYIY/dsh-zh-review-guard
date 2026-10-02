@@ -11,7 +11,7 @@ What it does:
 
 Usage:
   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-  & .\publish-github.ps1 -Owner <github-login> -Tgz D:\AGENTCREATE\release\dsh-zh-review-guard-0.1.0.tgz
+  & .\publish-github.ps1 -Owner <github-login> -Tgz <path\to>\dsh-zh-review-guard-0.1.0.tgz
 
 Optional parameters:
   -Repo dsh-zh-review-guard   repository name
@@ -19,17 +19,17 @@ Optional parameters:
   -Tag v0.1.0                 release tag
   -Notes RELEASE-NOTES-v0.1.0.md   release body file (relative to this script)
   -GitName / -GitEmail        repo-local commit identity; derived from the gh account when omitted
-  -Proxy http://127.0.0.1:7897     set HTTP(S)_PROXY for gh and git (this host needs it)
+  -Proxy http://<host>:<port>  set HTTP(S)_PROXY for gh and git (only if your network needs it)
   -NoPush                     local init + commit only
   -NoRelease                  create/push the repo but skip the release
-  -NoRewrite                  neutralise the global github.com -> ghfast.top URL rewrite for this run
+  -NoRewrite                  neutralise a global github.com URL rewrite for this run
 
 Host notes:
-  * This machine runs Windows PowerShell 5.1 with code page 936, so this script is
+  * Written for Windows PowerShell 5.1 on a CP936 host, so this script is
     deliberately pure ASCII (it parses identically under CP936 and UTF-8).
-  * C:\Users\ZNY\.gitconfig rewrites every github.com HTTPS URL through the ghfast.top
-    mirror, and gh (Go) ignores the WinINET system proxy (127.0.0.1:7897 / Clash),
-    which is why -Proxy and -NoRewrite exist.
+  * -Proxy / -NoRewrite exist because gh (Go) ignores proxies that are configured
+    only in the WinINET system settings, and a URL-rewriting mirror in .gitconfig
+    can break the credential-helper handshake.
   * The script never modifies your global .gitconfig.
 
 Exit code: 0 = success, 1 = failure.

@@ -10,13 +10,18 @@
 - **零依赖、无编译**：只用 `node:` 内置模块，`lib/index.js` 即可运行的 ESM 源码。
 - **26 项离线自测**：`node test/selftest.mjs`，不需要 DSH 运行时。
 
-## 安装（在目标电脑上）
+## 安装（在目标电脑上，约 30 秒）
 
 ```powershell
-dsh plugin --profile <profile> add "<path\to>\dsh-zh-review-guard-0.1.0.tgz"
+# 1. 下载附件（或在浏览器里点本页下方的 dsh-zh-review-guard-0.1.0.tgz）
+Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.0/dsh-zh-review-guard-0.1.0.tgz" -OutFile .\dsh-zh-review-guard-0.1.0.tgz
+Get-FileHash .\dsh-zh-review-guard-0.1.0.tgz -Algorithm SHA256   # 对照下面「资产」表里的值
+
+# 2. 装进你的 profile（Web GUI 用 web，桌面端用 desktop）
+dsh plugin --profile desktop add .\dsh-zh-review-guard-0.1.0.tgz
 ```
 
-`add` 会自动把包名写进 profile 的 `dsh.profile.bundles`（实测：`dependencies` 记 `file:...tgz`，`bundles` 从 `[]` 变 `["dsh-zh-review-guard"]`），装完**重启 App** 生效。完整步骤、验证方法与实测踩到的坑（profile `package.json` 不能带 BOM、tgz 路径不能删等）见包内 `INSTALL.md`。
+`add` 会自动把包名写进 profile 的 `dsh.profile.bundles`（`dependencies` 记 `file:...tgz`，`bundles` 从 `[]` 变 `["dsh-zh-review-guard"]`），装完**重启 App** 生效。完整步骤、验证方法与实测踩到的坑（profile `package.json` 不能带 BOM、tgz 路径不能删等）见包内 `INSTALL.md`。
 
 ## 资产
 
