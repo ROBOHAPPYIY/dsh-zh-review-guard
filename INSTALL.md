@@ -28,6 +28,8 @@ Invoke-WebRequest -Uri "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/relea
 
 > 本机复验记录（用上面这个 Release 附件，不是本地原文件）：`11 228 bytes`、SHA256 与上表逐字符一致、解包后 `node test/selftest.mjs` = `26/26 passed`、在**新建空白 profile** 上 `dsh plugin --profile <p> add <tgz>` `exit=0`，`--dump-config` 里出现 `# == dsh-zh-review-guard` 层且 `<profile>/package.json` 自动写入 `dependencies` 与 `dsh.profile.bundles` 两项。
 
+> 如果 `Invoke-WebRequest` 卡住或超时（部分网络下 GitHub 直连不通，本机实测就得走代理：先 `$env:HTTPS_PROXY='http://127.0.0.1:7897'`；也可用 `https://ghfast.top/https://github.com/...` 这类镜像前缀），最省事的办法是在能上网的机器上下好 tgz 再拷过去——tgz 自包含，拷过去就能装。
+
 零第三方依赖（只用 `node:` 内置模块），**没有编译步骤**，所以 tgz 拷过去即可用，不需要 npm 源、不需要联网。
 
 ## 前置条件
