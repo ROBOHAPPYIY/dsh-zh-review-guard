@@ -9,7 +9,7 @@
 [![Node](https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](./package.json)
-[![Self test](https://img.shields.io/badge/self%20test-26%2F26-brightgreen)](./test/selftest.mjs)
+[![Self test](https://img.shields.io/badge/self%20test-31%2F31-brightgreen)](./test/selftest.mjs)
 [![DSH plugin](https://img.shields.io/badge/DSH-bundle%20plugin-7B68EE)](./cordis.patch.yml)
 
 ---
@@ -53,13 +53,13 @@
 
 ```powershell
 # 1. 下载（也可在浏览器里点 Release 页的附件）
-Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.0/dsh-zh-review-guard-0.1.0.tgz" -OutFile .\dsh-zh-review-guard-0.1.0.tgz
+Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.1/dsh-zh-review-guard-0.1.1.tgz" -OutFile .\dsh-zh-review-guard-0.1.1.tgz
 
-# 2. 核对（可选但推荐）：11228 B / 8708BD708D7364C72F1B6376301B8BD5CA4ECC0D7623563FD93A1D31A68D2B91
-Get-FileHash .\dsh-zh-review-guard-0.1.0.tgz -Algorithm SHA256
+# 2. 核对（可选但推荐）：18272 B / A688F80945295B8D803C9FE1211D301D844770691EFE02215CBF0CE0D2E0E453
+Get-FileHash .\dsh-zh-review-guard-0.1.1.tgz -Algorithm SHA256
 
 # 3. 装进你的 profile（Web GUI 用 web，桌面端用 desktop）
-dsh plugin --profile desktop add .\dsh-zh-review-guard-0.1.0.tgz
+dsh plugin --profile desktop add .\dsh-zh-review-guard-0.1.1.tgz
 ```
 
 **然后重启 DSH App** —— profile 的 bundle 层栈在启动时装配，装完必须重启才生效。
@@ -88,7 +88,7 @@ dsh plugin --profile desktop remove dsh-zh-review-guard
 
 某些会话预设（例如本机的 `router-standard`）在「首轮，还没有任何 tool/call」时会**整体替换** `sections`，只保留自己的段。此时通道 1 注入的段会被丢掉 —— 而通道 2 走的是 `AGENTS.md` 基线，不经过那个替换点，因此首轮也一定有规则。
 
-`AGENTS.md` 的接管规则：**只在文件不存在、或文件里带有 `<!-- managed-by: dsh-zh-review-guard v0.1.0 -->` 标记时写入**。你自己手写的 `AGENTS.md` 绝不会被覆盖（判定结果记录在 `status.json` 的 `agentsFile.owned`）。
+`AGENTS.md` 的接管规则：**只在文件不存在、或文件里带有 `<!-- managed-by: dsh-zh-review-guard v0.1.1 -->` 标记时写入**。你自己手写的 `AGENTS.md` 绝不会被覆盖（判定结果记录在 `status.json` 的 `agentsFile.owned`）。
 </details>
 
 ## 配置
@@ -141,7 +141,7 @@ dsh plugin --profile desktop remove dsh-zh-review-guard
 
 ```bash
 git clone https://github.com/ROBOHAPPYIY/dsh-zh-review-guard
-node test/selftest.mjs      # 26 项断言，零依赖，不需要 DSH 运行时
+node test/selftest.mjs      # 31 项断言，零依赖，不需要 DSH 运行时
 ```
 
 在装有 `dsh-super-injector` 的开发机上可以免重启热装配：
@@ -153,7 +153,7 @@ dev_uninject_plugin  dsh-zh-review-guard
 
 ## 许可证
 
-[MIT](./LICENSE) © 2026 ROBOHAPPYIY —— 可自由使用、修改、再分发（含商用、含二次封装），保留版权声明即可。
+[MIT](./LICENSE) © 2031 ROBOHAPPYIY —— 可自由使用、修改、再分发（含商用、含二次封装），保留版权声明即可。
 
 ## 相关
 

@@ -65,8 +65,8 @@ dsh plugin --profile <name> <pnpm-args...>
 ### 办法一：用浏览器下载（第一次装推荐这个）
 
 1. 打开 Release 页面：
-   **https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/tag/v0.1.0**
-2. 页面往下滚到 **Assets**，点 **`dsh-zh-review-guard-0.1.0.tgz`** 下载。
+   **https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/tag/v0.1.1**
+2. 页面往下滚到 **Assets**，点 **`dsh-zh-review-guard-0.1.1.tgz`** 下载。
 3. 保存到一个**不会随手清空的目录**，例如先新建 `D:\dsh-plugins\`，把文件放进去。
 
 > ⚠️ 记住这个位置：**装完之后这个 tgz 不能删、也不能挪**（原因见 [故障排查 D](#d-装完之后-packagejson-里的-tgz-路径失效)）。
@@ -76,7 +76,7 @@ dsh plugin --profile <name> <pnpm-args...>
 ```powershell
 mkdir D:\dsh-plugins -Force
 cd D:\dsh-plugins
-Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.0/dsh-zh-review-guard-0.1.0.tgz" -OutFile .\dsh-zh-review-guard-0.1.0.tgz
+Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.1/dsh-zh-review-guard-0.1.1.tgz" -OutFile .\dsh-zh-review-guard-0.1.1.tgz
 ```
 
 **如果它卡住不动、或者报 `Unable to connect` / 超时** —— 这是网络到 GitHub 不通，三条替代路，任选一条：
@@ -84,10 +84,10 @@ Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/d
 ```powershell
 # 路线 1：走你本机的代理（把端口改成你自己的；Clash/V2Ray 常见 7890 / 7897）
 $env:HTTPS_PROXY='http://127.0.0.1:7897'
-Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.0/dsh-zh-review-guard-0.1.0.tgz" -OutFile .\dsh-zh-review-guard-0.1.0.tgz
+Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.1/dsh-zh-review-guard-0.1.1.tgz" -OutFile .\dsh-zh-review-guard-0.1.1.tgz
 
 # 路线 2：用镜像前缀（把 ghfast.top/ 加在原始链接前面）
-Invoke-WebRequest "https://ghfast.top/https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.0/dsh-zh-review-guard-0.1.0.tgz" -OutFile .\dsh-zh-review-guard-0.1.0.tgz
+Invoke-WebRequest "https://ghfast.top/https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.1/dsh-zh-review-guard-0.1.1.tgz" -OutFile .\dsh-zh-review-guard-0.1.1.tgz
 ```
 
 路线 3：在能上网的电脑上下好这个 tgz，用 U 盘/网盘拷过来。
@@ -98,7 +98,7 @@ Invoke-WebRequest "https://ghfast.top/https://github.com/ROBOHAPPYIY/dsh-zh-revi
 ## 第 3 步：核对文件（强烈推荐）
 
 ```powershell
-Get-FileHash .\dsh-zh-review-guard-0.1.0.tgz -Algorithm SHA256
+Get-FileHash .\dsh-zh-review-guard-0.1.1.tgz -Algorithm SHA256
 ```
 
 **应该看到**（`Hash` 列要一模一样，大小写无所谓）：
@@ -106,16 +106,16 @@ Get-FileHash .\dsh-zh-review-guard-0.1.0.tgz -Algorithm SHA256
 ```
 Algorithm       Hash                                                                   Path
 ---------       ----                                                                   ----
-SHA256          8708BD708D7364C72F1B6376301B8BD5CA4ECC0D7623563FD93A1D31A68D2B91       D:\dsh-plugins\...
+SHA256          A688F80945295B8D803C9FE1211D301D844770691EFE02215CBF0CE0D2E0E453       D:\dsh-plugins\...
 ```
 
 参考信息：
 
 | 项 | 值 |
 | --- | --- |
-| 文件名 | `dsh-zh-review-guard-0.1.0.tgz` |
-| 大小 | 11 228 字节（约 11 KB） |
-| SHA256 | `8708BD708D7364C72F1B6376301B8BD5CA4ECC0D7623563FD93A1D31A68D2B91` |
+| 文件名 | `dsh-zh-review-guard-0.1.1.tgz` |
+| 大小 | 18 272 字节（约 17.9 KB） |
+| SHA256 | `A688F80945295B8D803C9FE1211D301D844770691EFE02215CBF0CE0D2E0E453` |
 
 **对不上就别装**——重新下载一次；再对不上请到仓库的 Issues 里说一声。
 
@@ -153,7 +153,7 @@ dsh --profile desktop --dump-config
 ## 第 6 步：安装
 
 ```powershell
-dsh plugin --profile desktop add "D:\dsh-plugins\dsh-zh-review-guard-0.1.0.tgz"
+dsh plugin --profile desktop add "D:\dsh-plugins\dsh-zh-review-guard-0.1.1.tgz"
 ```
 
 把两个地方换成你自己的：`desktop` → 你第 4 步选的 profile；`D:\dsh-plugins\...` → 你第 2 步实际保存的路径（路径带空格也没关系，因为外面有引号）。
@@ -198,7 +198,7 @@ Get-Content "$env:USERPROFILE\.dsh\profiles\desktop\package.json"
 ```json
 {
   "dependencies": {
-    "dsh-zh-review-guard": "file:D:/dsh-plugins/dsh-zh-review-guard-0.1.0.tgz"
+    "dsh-zh-review-guard": "file:D:/dsh-plugins/dsh-zh-review-guard-0.1.1.tgz"
   },
   "dsh": {
     "profile": {
@@ -238,7 +238,7 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
 ```json
 {
   "plugin": "dsh-zh-review-guard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "instanceId": "1a2b3c4d",
   "pid": 12345,
   "startedAt": "2026-10-02T07:30:00.000Z",
@@ -269,7 +269,7 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
 随便开个新会话，系统提示词里应该多出这样一段（这是插件注入的常驻 section）：
 
 ```
-<!-- managed-by: dsh-zh-review-guard v0.1.0 -->
+<!-- managed-by: dsh-zh-review-guard v0.1.1 -->
 # 用户全局护栏（dsh-zh-review-guard 插件自动写入 / 每会话注入）
 ...
 ```
@@ -288,14 +288,14 @@ Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"
 
 ```powershell
 mkdir $env:TEMP\zhg-check -Force
-tar -xzf D:\dsh-plugins\dsh-zh-review-guard-0.1.0.tgz -C $env:TEMP\zhg-check
+tar -xzf D:\dsh-plugins\dsh-zh-review-guard-0.1.1.tgz -C $env:TEMP\zhg-check
 node "$env:TEMP\zhg-check\package\test\selftest.mjs"
 ```
 
 **应该看到**：
 
 ```
-26/26 passed
+31/31 passed
 ```
 
 > 这一步需要机器上有 `node`。DSH 自带的 node 就行；实在没有，跳过这一步也不影响安装。
@@ -311,7 +311,7 @@ dsh plugin --profile desktop remove dsh-zh-review-guard
 
 # 3) 按需清理插件之外的两处残留：
 #    - C:\Users\<你的用户名>\.dsh\AGENTS.md
-#      删掉带 <!-- managed-by: dsh-zh-review-guard v0.1.0 --> 标记的那段
+#      删掉带 <!-- managed-by: dsh-zh-review-guard v0.1.1 --> 标记的那段
 #      （或只删掉标记那一行，插件以后就不会再认领这个文件）
 #    - C:\Users\<你的用户名>\.dsh\zh-review-guard\
 #      纯观测数据（status.json / assemblies.jsonl / instances\），留删随意
@@ -416,7 +416,7 @@ dsh plugin --profile desktop install
 
 ```powershell
 # 1) 解压到稳定目录
-tar -xzf D:\dsh-plugins\dsh-zh-review-guard-0.1.0.tgz -C $env:TEMP\zhg-manual
+tar -xzf D:\dsh-plugins\dsh-zh-review-guard-0.1.1.tgz -C $env:TEMP\zhg-manual
 Move-Item $env:TEMP\zhg-manual\package D:\dsh-plugins\dsh-zh-review-guard
 
 # 2) 手工编辑 C:\Users\<你的用户名>\.dsh\profiles\desktop\package.json
@@ -452,9 +452,9 @@ dsh plugin --profile desktop install
 | 想干什么 | 命令 |
 | --- | --- |
 | 看 DSH 能不能用 | `dsh --help` |
-| 下载 | `Invoke-WebRequest "<Release 附件直链>" -OutFile .\dsh-zh-review-guard-0.1.0.tgz` |
-| 核对完整性 | `Get-FileHash .\dsh-zh-review-guard-0.1.0.tgz -Algorithm SHA256` |
-| 安装 | `dsh plugin --profile desktop add "D:\dsh-plugins\dsh-zh-review-guard-0.1.0.tgz"` |
+| 下载 | `Invoke-WebRequest "<Release 附件直链>" -OutFile .\dsh-zh-review-guard-0.1.1.tgz` |
+| 核对完整性 | `Get-FileHash .\dsh-zh-review-guard-0.1.1.tgz -Algorithm SHA256` |
+| 安装 | `dsh plugin --profile desktop add "D:\dsh-plugins\dsh-zh-review-guard-0.1.1.tgz"` |
 | 确认装上了 | `dsh --profile desktop --dump-config \| Select-String "zh-review-guard"` |
 | 看生效证据 | `Get-Content "$env:USERPROFILE\.dsh\zh-review-guard\status.json"` |
 | 卸载 | `dsh plugin --profile desktop remove dsh-zh-review-guard` |
@@ -470,8 +470,8 @@ dsh plugin --profile desktop install
 
 用**从 Release 下载回来的那份 tgz**（不是本地原文件）复验过：
 
-- `11 228 bytes`，SHA256 与上表逐字符一致；
-- 解包后 `node test/selftest.mjs` → `26/26 passed`；
+- `18 272 bytes`，SHA256 与上表逐字符一致；
+- 解包后 `node test/selftest.mjs` → `31/31 passed`；
 - 在一个**全新的空白 profile** 上 `dsh plugin --profile <p> add <tgz>` → `exit=0`；
 - `dsh --profile <p> --dump-config` 里出现 `# == dsh-zh-review-guard` 层，且 `<profile>\package.json` 自动写入 `dependencies` 与 `dsh.profile.bundles` 两项；
 - 复验用的临时 profile 已删除，没有留在你的 `profiles\` 目录里。

@@ -2,10 +2,10 @@
  * 自测：用假 ctx / 假 assembly 验证护栏插件的核心契约。
  * 运行：node test/selftest.mjs   （不需要 DSH 运行时，零依赖）
  */
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { apply, MARKER, RULES_TEXT, name } from '../lib/index.js'
+import { apply, MARKER, MARKER_PREFIX, RULES_TEXT, VERSION, name } from '../lib/index.js'
 
 const rows = []
 const check = (label, ok, extra = '') => {
@@ -86,6 +86,35 @@ for (const d of disposers) {
   if (typeof d === 'function') d()
 }
 check('disposer 可安全调用（卸载即净）', existsSync(join(dir, 'disposed.json')))
+
+// —— 通道 2：AGENTS.md 同步与跨版本认领（这段真的读写文件，所以换一个独立的临时 DSH_HOME）——
+check('status 记录的版本与包版本一致', status.version === VERSION, `got=${status.version}`)
+check('归属标记前缀跨版本稳定', MARKER.startsWith(MARKER_PREFIX) && MARKER.startsWith('<!-- managed-by: dsh-zh-review-guard'))
+
+const home2 = mkdtempSync(join(tmpdir(), 'zh-guard-home-'))
+const prevHome = process.env.DSH_HOME
+process.env.DSH_HOME = home2
+const agentsPath = join(home2, 'AGENTS.md')
+const quietCtx = () => ({ on() {}, effect() {} })
+
+// a) 老版本（v0.1.0）写下的 AGENTS.md 在升级后仍被认领，并就地升级为当前文本
+writeFileSync(agentsPath, '<!-- managed-by: dsh-zh-review-guard v0.1.0 -->\n# 老版本写入\n', 'utf8')
+apply(quietCtx(), { logDir: join(home2, 'log-a'), syncAgentsFile: true })
+check('通道 2：老版本(v0.1.0)标记的文件仍被认领并升级', readFileSync(agentsPath, 'utf8').trim() === RULES_TEXT.trim())
+
+// b) 用户手写的 AGENTS.md 绝不被覆盖
+const userText = '# 我自己写的规则\n不要动我\n'
+writeFileSync(agentsPath, userText, 'utf8')
+apply(quietCtx(), { logDir: join(home2, 'log-b'), syncAgentsFile: true })
+check('通道 2：用户手写的 AGENTS.md 绝不被覆盖', readFileSync(agentsPath, 'utf8') === userText)
+
+// c) 文件不存在时创建并写入
+const home3 = mkdtempSync(join(tmpdir(), 'zh-guard-home3-'))
+process.env.DSH_HOME = home3
+apply(quietCtx(), { logDir: join(home3, 'log-c'), syncAgentsFile: true })
+check('通道 2：文件不存在时创建并写入规则', existsSync(join(home3, 'AGENTS.md')) && readFileSync(join(home3, 'AGENTS.md'), 'utf8').startsWith(MARKER))
+if (prevHome === undefined) delete process.env.DSH_HOME
+else process.env.DSH_HOME = prevHome
 
 for (const [s, label, extra] of rows) console.log(`${s}  ${label}${extra ? '  (' + extra + ')' : ''}`)
 const failed = rows.filter((r) => r[0] === 'FAIL').length
