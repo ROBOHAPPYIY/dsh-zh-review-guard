@@ -51,6 +51,20 @@
 
 **前提**：目标机装了 DeepSeek Harness，命令行里 `dsh --version` 有输出。
 
+**最省事是一条命令**（机器能访问 GitHub 就行，不用先下载）：
+
+```powershell
+# 走 git 源，pin 住 tag；实测约 11 秒
+dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.1.1
+
+# 没有 git / 不想走 git：直接拉 Release 附件
+dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.1/dsh-zh-review-guard-0.1.1.tgz
+```
+
+把 `desktop` 换成你的 profile 名（Web GUI 用 `web`）。网络不通就先设代理：`$env:HTTPS_PROXY='http://127.0.0.1:7897'`。装完同样要**重启 App**。
+
+**离线安装**（先下载、核对哈希、再装）：
+
 ```powershell
 # 1. 下载（也可在浏览器里点 Release 页的附件）
 Invoke-WebRequest "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.1/dsh-zh-review-guard-0.1.1.tgz" -OutFile .\dsh-zh-review-guard-0.1.1.tgz

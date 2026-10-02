@@ -12,7 +12,19 @@
 
 ## 安装
 
-和 v0.1.0 一样（完整步骤见包内 `INSTALL.md`，在线版 https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/blob/main/INSTALL.md ）：
+**最快是一条命令**（机器能访问 GitHub 就行，不用先下载；完整步骤见包内 `INSTALL.md`，在线版 https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/blob/main/INSTALL.md ）：
+
+```powershell
+# 走 git 源，pin 住 tag（要求机器上装了 git）
+dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.1.1
+
+# 没有 git / 不想走 git：直接拉本页附件
+dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.1/dsh-zh-review-guard-0.1.1.tgz
+```
+
+两种写法都会让 `dsh plugin add` 自动把包名写进 `dsh.profile.bundles`，装完**重启 App** 生效。
+
+**离线安装**（先下载、核对哈希、再装）：
 
 ```powershell
 # 1. 下载附件

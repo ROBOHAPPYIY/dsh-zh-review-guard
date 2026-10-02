@@ -15,20 +15,21 @@
 
 1. [开始之前](#1-开始之前)
 2. [第 1 步：确认 `dsh` 命令能用](#第-1-步确认-dsh-命令能用)
-3. [第 2 步：下载安装包](#第-2-步下载安装包)
-4. [第 3 步：核对文件（强烈推荐）](#第-3-步核对文件强烈推荐)
-5. [第 4 步：决定装进哪个 profile](#第-4-步决定装进哪个-profile)
-6. [第 5 步：关掉 DSH App](#第-5-步关掉-dsh-app)
-7. [第 6 步：安装](#第-6-步安装)
-8. [第 7 步：确认装上了](#第-7-步确认装上了)
-9. [第 8 步：重启 DSH App](#第-8-步重启-dsh-app)
-10. [第 9 步：验证真的生效](#第-9-步验证真的生效)
-11. [第 10 步（可选）：离线自检](#第-10-步可选离线自检)
-12. [卸载](#卸载)
-13. [故障排查](#故障排查)
-14. [手动安装（连 pnpm 都用不了时）](#手动安装连-pnpm-都用不了时)
-15. [附录 A：这个包会动哪些文件](#附录-a这个包会动哪些文件)
-16. [附录 B：命令速查表](#附录-b命令速查表)
+3. [一条命令装完（推荐）](#一条命令装完推荐)
+4. [第 2 步：下载安装包](#第-2-步下载安装包)
+5. [第 3 步：核对文件（强烈推荐）](#第-3-步核对文件强烈推荐)
+6. [第 4 步：决定装进哪个 profile](#第-4-步决定装进哪个-profile)
+7. [第 5 步：关掉 DSH App](#第-5-步关掉-dsh-app)
+8. [第 6 步：安装](#第-6-步安装)
+9. [第 7 步：确认装上了](#第-7-步确认装上了)
+10. [第 8 步：重启 DSH App](#第-8-步重启-dsh-app)
+11. [第 9 步：验证真的生效](#第-9-步验证真的生效)
+12. [第 10 步（可选）：离线自检](#第-10-步可选离线自检)
+13. [卸载](#卸载)
+14. [故障排查](#故障排查)
+15. [手动安装（连 pnpm 都用不了时）](#手动安装连-pnpm-都用不了时)
+16. [附录 A：这个包会动哪些文件](#附录-a这个包会动哪些文件)
+17. [附录 B：命令速查表](#附录-b命令速查表)
 
 ---
 
@@ -60,7 +61,49 @@ dsh plugin --profile <name> <pnpm-args...>
 
 ---
 
+## 一条命令装完（推荐）
+
+**只要机器能访问 GitHub，装这个插件就只需要一行命令** —— 下载、核对哈希都交给 `dsh plugin add` 自己做。
+
+网络不通时才需要先设代理（端口换成你自己的）：
+
+```powershell
+$env:HTTPS_PROXY='http://127.0.0.1:7897'
+```
+
+然后二选一：
+
+```powershell
+# 方式 A1：走 git 源，pin 住版本 tag（实测约 11 秒；要求机器上装了 git）
+dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.1.1
+
+# 方式 A2：直接拉 Release 附件（不需要 git；实测约 40 秒）
+dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.1/dsh-zh-review-guard-0.1.1.tgz
+```
+
+把 `desktop` 换成你的 profile 名（Web GUI 用 `web`；不确定就先读[第 4 步](#第-4-步决定装进哪个-profile)）。
+
+**应该看到**（方式 A1 的实测输出）：
+
+```
++ dsh-zh-review-guard github:ROBOHAPPYIY/dsh-zh-review-guard#v0.1.1
+
+Packages: +1
+Progress: resolved 1, reused 0, downloaded 1, added 1, done
+Done in 11.4s using pnpm v11.7.0
+```
+
+看到 `Done in ... using pnpm` 就是装好了（`dsh plugin add` 会自动把包名写进 `dsh.profile.bundles`，**不需要手工改任何文件**）。接着跳到 **[第 7 步：确认装上了](#第-7-步确认装上了)**，再按[第 8 步](#第-8-步重启-dsh-app)重启 App 即可。
+
+> **为什么写 `#v0.1.1`**：`github:用户/仓库#tag` 里 `#` 后面是 tag；pin 住 tag 才能保证每次装到的都是同一份代码。不写 tag 会装 `main` 分支的最新提交。以后升级就是把这一行里的版本号换成新版号再跑一次。
+>
+> **方式 A1 的前提**：命令里能找到 `git`（`git --version` 有输出就行）。机器上没有 git 就用方式 A2，或者走下面的离线安装。
+
+---
+
 ## 第 2 步：下载安装包
+
+> 已经用上面的「一条命令装完」装好的话，第 2、3、5、6 步都可以跳过 —— 那几步是给**网络不通、没有 git、或者想先核对哈希**的场景准备的。
 
 ### 办法一：用浏览器下载（第一次装推荐这个）
 
@@ -452,7 +495,10 @@ dsh plugin --profile desktop install
 | 想干什么 | 命令 |
 | --- | --- |
 | 看 DSH 能不能用 | `dsh --help` |
-| 下载 | `Invoke-WebRequest "<Release 附件直链>" -OutFile .\dsh-zh-review-guard-0.1.1.tgz` |
+| **一键安装（推荐）** | `dsh plugin --profile desktop add github:ROBOHAPPYIY/dsh-zh-review-guard#v0.1.1` |
+| 一键安装（没有 git / 不想走 git） | `dsh plugin --profile desktop add https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.1/dsh-zh-review-guard-0.1.1.tgz` |
+| 升级到新版本 | 把上面命令里的 `v0.1.1` 换成新版本号再跑一次 |
+| 下载（离线安装用） | `Invoke-WebRequest "<Release 附件直链>" -OutFile .\dsh-zh-review-guard-0.1.1.tgz` |
 | 核对完整性 | `Get-FileHash .\dsh-zh-review-guard-0.1.1.tgz -Algorithm SHA256` |
 | 安装 | `dsh plugin --profile desktop add "D:\dsh-plugins\dsh-zh-review-guard-0.1.1.tgz"` |
 | 确认装上了 | `dsh --profile desktop --dump-config \| Select-String "zh-review-guard"` |
