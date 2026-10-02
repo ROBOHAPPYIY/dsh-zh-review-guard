@@ -9,7 +9,24 @@
 | `dsh-zh-review-guard-0.1.0.tgz` | 标准 npm 包（`npm pack` 产物），6 个文件：`package.json`、`cordis.patch.yml`、`lib/index.js`、`test/selftest.mjs`、`README.md`、`INSTALL.md` |
 | 本文件 | 目标机安装步骤 |
 
-同一个 tgz 也发布在本仓库的 **Releases** 页（发版时上传，附件与源码同源；下载后可用 `Get-FileHash <tgz> -Algorithm SHA256` 与 Release 说明里的值核对）。
+同一个 tgz 已发布在本仓库的 **Releases** 页，附件与源码同源：
+
+| 项 | 值 |
+| --- | --- |
+| 仓库 | https://github.com/ROBOHAPPYIY/dsh-zh-review-guard |
+| Release v0.1.0 | https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/tag/v0.1.0 |
+| 附件直链 | https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.0/dsh-zh-review-guard-0.1.0.tgz |
+| 大小 | 11 228 B |
+| SHA256 | `8708BD708D7364C72F1B6376301B8BD5CA4ECC0D7623563FD93A1D31A68D2B91` |
+
+从 Release 下载（也可在浏览器里点「附件直链」）：
+
+```powershell
+Invoke-WebRequest -Uri "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.0/dsh-zh-review-guard-0.1.0.tgz" -OutFile .\dsh-zh-review-guard-0.1.0.tgz
+(Get-FileHash .\dsh-zh-review-guard-0.1.0.tgz -Algorithm SHA256).Hash   # 应等于 8708BD70...D2B91
+```
+
+> 本机复验记录（用上面这个 Release 附件，不是本地原文件）：`11 228 bytes`、SHA256 与上表逐字符一致、解包后 `node test/selftest.mjs` = `26/26 passed`、在**新建空白 profile** 上 `dsh plugin --profile <p> add <tgz>` `exit=0`，`--dump-config` 里出现 `# == dsh-zh-review-guard` 层且 `<profile>/package.json` 自动写入 `dependencies` 与 `dsh.profile.bundles` 两项。
 
 零第三方依赖（只用 `node:` 内置模块），**没有编译步骤**，所以 tgz 拷过去即可用，不需要 npm 源、不需要联网。
 

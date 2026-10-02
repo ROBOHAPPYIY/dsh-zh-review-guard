@@ -55,7 +55,21 @@ node test/selftest.mjs      # 26 项断言，零依赖，不需要 DSH 运行时
   dsh plugin --profile <profile> add <path\to>\dsh-zh-review-guard-0.1.0.tgz
   ```
   这一步会自动把包名写进 profile 的 `dsh.profile.bundles`，装完重启 App 生效。完整步骤、验证方法与本机实测踩到的坑见 [`INSTALL.md`](./INSTALL.md)。
-- **从 GitHub Releases 拿包**：在本仓库的 Releases 页下载 `dsh-zh-review-guard-0.1.0.tgz`，再用上面同一条命令安装（tgz 内已自带 `README.md` 与 `INSTALL.md`，不需要另拷源码）。
+- **从 GitHub Releases 拿包（v0.1.0 已发布）**：
+
+  | 项 | 值 |
+  | --- | --- |
+  | 仓库 | https://github.com/ROBOHAPPYIY/dsh-zh-review-guard |
+  | Release | https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/tag/v0.1.0 |
+  | 附件直链 | https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.0/dsh-zh-review-guard-0.1.0.tgz |
+  | 大小 / SHA256 | 11 228 B / `8708BD708D7364C72F1B6376301B8BD5CA4ECC0D7623563FD93A1D31A68D2B91` |
+
+  ```powershell
+  Invoke-WebRequest -Uri "https://github.com/ROBOHAPPYIY/dsh-zh-review-guard/releases/download/v0.1.0/dsh-zh-review-guard-0.1.0.tgz" -OutFile .\dsh-zh-review-guard-0.1.0.tgz
+  (Get-FileHash .\dsh-zh-review-guard-0.1.0.tgz -Algorithm SHA256).Hash   # 应等于 8708BD70...
+  ```
+
+  tgz 内已自带 `README.md` 与 `INSTALL.md`，不需要另拷源码。已用该 Release 附件在空白 profile 上复验：解包自测 `26/26 passed`、`dsh plugin add` `exit=0`、`--dump-config` 里出现 `# == dsh-zh-review-guard` 层。
 
 卸载 / 排查：
 
